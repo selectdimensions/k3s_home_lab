@@ -16,7 +16,7 @@ Create `pi-setup.sh`:
 set -e
 
 HOSTNAME=${1:-pi-node}
-STATIC_IP=${2:-192.168.1.100}
+STATIC_IP=${2:-192.168.0.100}
 GATEWAY="192.168.1.1"  # Adjust for your network
 DNS="8.8.8.8,1.1.1.1"
 
@@ -360,12 +360,15 @@ echo "   kubectl get pods -A"
    chmod +x pi-setup.sh
 
    ./pi-setup.sh pi-master 192.168.1.10  # Adjust hostname and IP
-   
+
    sudo reboot
    ```
 4. **Run complete bootstrap** from your local machine:
    ```bash
+   wget https://raw.githubusercontent.com/selectdimensions/k3s_home_lab/main/
+
    chmod +x *.sh
+
    ./bootstrap-cluster.sh
    ```
 
