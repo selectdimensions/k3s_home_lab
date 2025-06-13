@@ -3,7 +3,7 @@
 
 set -e
 
-NODES=("pi-master:192.168.1.10" "pi-worker-1:192.168.1.11" "pi-worker-2:192.168.1.12" "pi-worker-3:192.168.1.13")
+NODES=("pi-master:192.168.1.120" "pi-worker-1:192.168.1.121" "pi-worker-2:192.168.1.122" "pi-worker-3:192.168.1.123")
 SSH_KEY_NAME="pi_cluster_key"
 USERNAME="hezekiah"  # Change to your username
 
