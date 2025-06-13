@@ -4,22 +4,21 @@
 set -e
 
 declare -A NODES=(
-    ["pi-master"]="192.168.1.10"
-    ["pi-worker-1"]="192.168.1.11"
-    ["pi-worker-2"]="192.168.1.12"
-    ["pi-worker-3"]="192.168.1.13"
+    ["pi-master"]="192.168.0.120"  # Update to match your network
+    ["pi-worker-1"]="192.168.0.121"
+    ["pi-worker-2"]="192.168.0.122"
+    ["pi-worker-3"]="192.168.0.123"
 )
 
-GATEWAY="192.168.1.1"
+GATEWAY="192.168.0.1"
 DNS="8.8.8.8,1.1.1.1"
 
 echo "🌐 Configuring network for all Pi nodes"
 
 for hostname in "${!NODES[@]}"; do
     ip=${NODES[$hostname]}
-    
     echo "📡 Configuring $hostname with IP $ip"
-    
+
     # Run network configuration on remote node
     ssh $hostname "sudo tee /etc/dhcpcd.conf > /dev/null" << EOF
 # Static IP configuration for $hostname

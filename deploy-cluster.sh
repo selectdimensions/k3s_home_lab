@@ -3,8 +3,13 @@
 
 set -e
 
-MASTER_IP="192.168.1.10"
-WORKER_IPS=("192.168.1.11" "192.168.1.12" "192.168.1.13")
+MASTER_IP="192.168.0.120"  # Update to match your master node IP
+MASTER_NAME="pi-master"  # Update to match your master node hostname
+# Define worker node IPs
+# Update to match your worker node IPs
+# Example: pi-worker-1, pi-worker-2, pi-worker-3
+# Define worker node IPs
+WORKER_IPS=("192.168.0.121" "192.168.0.122" "192.168.0.123")
 
 echo "🚀 Deploying Pi Cluster with K3s and data engineering tools"
 
@@ -48,7 +53,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.1.200-192.168.1.250
+  - 192.168.0.200-192.168.0.250
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
