@@ -18,7 +18,7 @@ echo "🔐 Setting up SSH keys for Pi cluster"
 # Generate SSH key if it doesn't exist
 if [ ! -f ~/.ssh/$SSH_KEY_NAME ]; then
     echo "🔑 Generating new SSH key..."
-    ssh-keygen -t ed25519 -f ~/.ssh/$SSH_KEY_NAME -C "$USERNAME@pi-cluster" -N ""
+    ssh-keygen -t ed25519 -f ~/.ssh/$SSH_KEY_NAME -C "$USERNAME@pi-master" -N ""
 fi
 
 # Create SSH config
