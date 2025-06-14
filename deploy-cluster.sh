@@ -1,74 +1,102 @@
 #!/bin/bash
-# deploy-cluster.sh - Deploy complete K3s cluster with data engineering stack
+# deploy-cluster.sh - Deploy K3s cluster using hostnames
 
 set -e
 
-MASTER_IP="192.168.0.120"  # Update to match your master node IP
-MASTER_NAME="pi-master"  # Update to match your master node hostname
-# Define worker node IPs
-# Update to match your worker node IPs
-# Example: pi-worker-1, pi-worker-2, pi-worker-3
-# Define worker node IPs
-WORKER_IPS=("192.168.0.121" "192.168.0.122" "192.168.0.123")
+MASTER_NODE="pi-master"
+WORKER_NODES=("pi-worker-1" "pi-worker-2" "pi-worker-3")
 
-echo "🚀 Deploying Pi Cluster with K3s and data engineering tools"
+echo "🚀 Deploying K3s cluster"
 
-# Install K3s on master
-echo "📦 Installing K3s master on pi-master..."
-ssh pi-master "curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644"
+# Step 1: Install K3s on master node
+echo "📋 Installing K3s master on $MASTER_NODE..."
 
-# Get node token
-NODE_TOKEN=$(ssh pi-master "sudo cat /var/lib/rancher/k3s/server/node-token")
+ssh $MASTER_NODE << 'EOF'
+echo "🔽 Downloading and installing K3s master..."
+curl -sfL https://get.k3s.io | sh -s - server \
+    --write-kubeconfig-mode 644 \
+    --disable servicelb \
+    --disable traefik \
+    --node-name pi-master
 
-# Install K3s on workers
-for worker_ip in "${WORKER_IPS[@]}"; do
-    worker_name=$(ssh $worker_ip hostname)
-    echo "📦 Installing K3s worker on $worker_name..."
-    
-    ssh $worker_ip "curl -sfL https://get.k3s.io | K3S_URL=https://$MASTER_IP:6443 K3S_TOKEN=$NODE_TOKEN sh -"
-done
+echo "⏳ Waiting for K3s master to be ready..."
+sleep 30
 
-# Copy kubeconfig locally
-echo "📋 Copying kubeconfig..."
-scp pi-master:/etc/rancher/k3s/k3s.yaml ~/.kube/config
-sed -i "s/127.0.0.1/$MASTER_IP/g" ~/.kube/config
+# Wait for the node to be ready
+sudo k3s kubectl wait --for=condition=Ready node pi-master --timeout=300s
 
-# Wait for nodes to be ready
-echo "⏳ Waiting for all nodes to be ready..."
-kubectl wait --for=condition=Ready nodes --all --timeout=300s
-
-# Deploy essential components
-echo "🔧 Deploying cluster components..."
-
-# MetalLB
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
-kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb --timeout=90s
-
-# MetalLB IP pool configuration
-kubectl apply -f - << EOF
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: first-pool
-  namespace: metallb-system
-spec:
-  addresses:
-  - 192.168.0.200-192.168.0.250
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: l2-advert
-  namespace: metallb-system
+echo "✅ K3s master is ready"
+echo "📊 Master node status:"
+sudo k3s kubectl get nodes -o wide
 EOF
 
-# Install Helm
-echo "🎡 Installing Helm..."
-ssh pi-master "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
+# Get master details
+echo "🔍 Getting master node details..."
+MASTER_IP=$(ssh $MASTER_NODE "hostname -I | awk '{print \$1}'")
+TOKEN=$(ssh $MASTER_NODE "sudo cat /var/lib/rancher/k3s/server/node-token")
 
-# Add Helm repositories
-kubectl create namespace monitoring || true
-kubectl create namespace data-platform || true
+echo "✅ Master installed successfully"
+echo "🔗 Master IP: $MASTER_IP"
 
-echo "✅ Basic cluster deployment complete!"
-echo "🎯 Next steps: Deploy data engineering tools with Helm"
+# Step 2: Install K3s on worker nodes
+for worker in "${WORKER_NODES[@]}"; do
+    echo ""
+    echo "📋 Installing K3s worker on $worker..."
+    
+    ssh $worker << EOF
+echo "🔽 Downloading and installing K3s worker..."
+curl -sfL https://get.k3s.io | K3S_URL=https://$MASTER_IP:6443 K3S_TOKEN=$TOKEN sh -s - agent --node-name $worker
+
+echo "✅ K3s worker installed on $worker"
+EOF
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ $worker joined the cluster successfully"
+    else
+        echo "❌ Failed to install K3s on $worker"
+    fi
+done
+
+# Step 3: Verify cluster
+echo ""
+echo "🧪 Verifying cluster status..."
+sleep 30
+
+ssh $MASTER_NODE << 'EOF'
+echo "📊 Cluster nodes:"
+sudo k3s kubectl get nodes -o wide
+
+echo ""
+echo "📊 System pods:"
+sudo k3s kubectl get pods -A
+
+echo ""
+echo "📊 Cluster info:"
+sudo k3s kubectl cluster-info
+
+echo ""
+echo "🎯 Cluster is ready!"
+EOF
+
+# Step 4: Copy kubeconfig
+echo ""
+echo "📋 Copying kubeconfig..."
+mkdir -p ~/.kube
+
+# Copy and update kubeconfig
+scp $MASTER_NODE:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+sed -i "s/127.0.0.1/$MASTER_IP/g" ~/.kube/config
+
+echo "✅ Kubeconfig copied and configured"
+
+if command -v kubectl &> /dev/null; then
+    echo "🧪 Testing cluster access..."
+    kubectl get nodes
+else
+    echo "⚠️  kubectl not found. Install kubectl to manage your cluster."
+fi
+
+echo ""
+echo "🎉 K3s cluster deployment complete!"
+echo ""
+echo "📝 Your cluster is ready. Use 'kubectl get nodes' to verify."
