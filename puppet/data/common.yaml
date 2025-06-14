@@ -1,0 +1,34 @@
+---
+# Common configuration for all nodes
+pi_cluster::cluster_name: 'pi-k3s-cluster'
+pi_cluster::cluster_domain: 'cluster.local'
+pi_cluster::timezone: 'UTC'
+
+# Network configuration
+pi_cluster::network::cidr: '192.168.0.0/24'
+pi_cluster::network::gateway: '192.168.0.1'
+pi_cluster::network::dns_servers:
+  - '8.8.8.8'
+  - '1.1.1.1'
+
+# K3s configuration
+pi_cluster::k3s::version: 'v1.28.4+k3s1'
+pi_cluster::k3s::disable_components:
+  - 'traefik'
+  - 'servicelb'
+
+# MetalLB configuration
+pi_cluster::metallb::version: '0.13.12'
+pi_cluster::metallb::ip_range: '192.168.0.200-192.168.0.250'
+
+# Storage configuration
+pi_cluster::storage::default_class: 'local-path'
+
+# Backup configuration
+pi_cluster::backup::schedule: '0 2 * * *'
+pi_cluster::backup::retention_days: 30
+
+# Security settings
+pi_cluster::security::enable_firewall: true
+pi_cluster::security::fail2ban::enabled: true
+pi_cluster::security::ssh::permit_root_login: false

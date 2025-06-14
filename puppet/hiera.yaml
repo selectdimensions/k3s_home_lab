@@ -1,0 +1,25 @@
+---
+version: 5
+
+defaults:
+  datadir: data
+  data_hash: yaml_data
+
+hierarchy:
+  - name: "Per-node data"
+    paths:
+      - "nodes/%{facts.networking.hostname}.yaml"
+      - "nodes/%{facts.networking.fqdn}.yaml"
+  
+  - name: "Per-environment data"
+    paths:
+      - "environments/%{environment}/common.yaml"
+      - "environments/%{environment}/%{facts.os.family}.yaml"
+  
+  - name: "Per-OS defaults"
+    paths:
+      - "os/%{facts.os.family}.yaml"
+      - "os/%{facts.os.name}/%{facts.os.release.major}.yaml"
+  
+  - name: "Common data"
+    path: "common.yaml"

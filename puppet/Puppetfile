@@ -1,0 +1,22 @@
+forge 'https://forge.puppet.com'
+
+# Core modules
+mod 'puppetlabs-stdlib', '8.5.0'
+mod 'puppetlabs-concat', '7.3.3'
+mod 'puppetlabs-firewall', '3.6.0'
+mod 'puppetlabs-apt', '9.0.2'
+mod 'puppetlabs-vcsrepo', '5.4.0'
+mod 'puppetlabs-docker', '6.0.0'
+mod 'puppetlabs-kubernetes', '7.1.0'
+mod 'puppetlabs-helm', '0.2.0'
+
+# Additional modules for Pi cluster
+mod 'puppet-systemd', '3.10.0'
+mod 'puppet-archive', '6.1.1'
+mod 'puppet-python', '6.3.0'
+mod 'camptocamp-kmod', '3.2.0'
+mod 'puppet-alternatives', '4.1.0'
+
+# Monitoring modules
+mod 'puppet-prometheus', '12.4.0'
+mod 'puppet-grafana', '11.1.0'

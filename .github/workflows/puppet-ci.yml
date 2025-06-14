@@ -1,0 +1,119 @@
+name: Puppet CI/CD
+
+on:
+  pull_request:
+    paths:
+      - 'puppet/**'
+      - '.github/workflows/puppet-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'puppet/**'
+
+env:
+  PUPPET_VERSION: '7.26.0'
+  PDK_VERSION: '3.0.0'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+
+      - name: Install PDK
+        run: |
+          wget https://puppet.com/download-puppet-development-kit
+          sudo dpkg -i puppet-development-kit_${PDK_VERSION}-1focal_amd64.deb
+
+      - name: Validate Puppet manifests
+        run: |
+          cd puppet
+          pdk validate
+
+      - name: Run Puppet lint
+        run: |
+          cd puppet
+          pdk validate puppet
+
+      - name: Check Puppet style
+        run: |
+          cd puppet
+          pdk validate ruby
+
+  test:
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        puppet_version: ['7.26.0', '8.0.0']
+        os: ['debian-11', 'ubuntu-22.04']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install dependencies
+        run: |
+          cd puppet
+          bundle install
+          
+      - name: Run rspec tests
+        run: |
+          cd puppet
+          bundle exec rake spec
+        env:
+          PUPPET_VERSION: ${{ matrix.puppet_version }}
+          FACTER_os_family: ${{ matrix.os }}
+
+      - name: Run acceptance tests
+        run: |
+          cd puppet
+          bundle exec rake beaker
+        if: github.event_name == 'push'
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+      max-parallel: 1
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Puppet Bolt
+        run: |
+          wget -O - https://apt.puppet.com/puppet-tools-release-focal.deb | sudo dpkg -i -
+          sudo apt-get update
+          sudo apt-get install -y puppet-bolt
+
+      - name: Configure SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_CLUSTER_SSH_KEY }}" > ~/.ssh/pi_cluster_key
+          chmod 600 ~/.ssh/pi_cluster_key
+
+      - name: Run Puppet Bolt deployment
+        run: |
+          cd puppet
+          bolt plan run pi_cluster_automation::deploy \
+            --targets @../inventory.yaml \
+            --inventoryfile ../inventory.yaml \
+            environment=${{ matrix.environment }} \
+            --run-as root \
+            --no-host-key-check
