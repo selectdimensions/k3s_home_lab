@@ -1,3 +1,8 @@
+[![Kubernetes Applications CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml)
+[![Puppet CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml)
+[![Security Scanning](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml)
+[![Terraform CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml)
+
 *Thinking...*
 
 > The user wants me to add this comprehensive requirements document to the "How It Works" document I just created. This is a detailed PRD (Product Requirements Document) for their Pi Cluster project. I should integrate this information into the existing document in a way that flows naturally and enhances the understanding of the project.
@@ -707,4 +712,21 @@ mc mirror --overwrite backup-nas/minio/ minio/
    - Real data engineering workflows
    - Production-like environment
 
+<<<<<<< HEAD
 This architecture provides a complete implementation of the PiClusterOps v1.0 requirements, delivering a professional-grade data engineering platform on Raspberry Pi hardware.
+=======
+## Benefits of Using Puppet
+
+1. **True Cross-Platform Support**: Native support for Windows, macOS, and Linux
+2. **Declarative Configuration**: Define desired state, Puppet handles implementation
+3. **Puppet Forge**: Extensive module ecosystem for common tasks
+4. **Bolt Orchestration**: Agentless task execution and plan orchestration
+5. **Enterprise Features**: Optional Puppet Enterprise for GUI, RBAC, and compliance
+6. **Hiera Data Management**: Separate configuration data from code
+7. **Strong Testing Framework**: RSpec-puppet for comprehensive testing
+8. **Mature Ecosystem**: Well-established tool with extensive documentation
+9. **Reporting & Compliance**: Built-in reporting and compliance features
+10. **Scale**: Efficiently manages thousands of nodes
+
+This structure provides a production-ready, cross-platform Pi cluster infrastructure management solution using Puppet.
+>>>>>>> a8dc482af4fde2ddf4a4c269f597aee8747859da
