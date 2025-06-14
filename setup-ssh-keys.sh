@@ -16,9 +16,11 @@ USERNAME="hezekiah"  # Change to your username
 echo "🔐 Setting up SSH keys for Pi cluster"
 
 # Generate SSH key if it doesn't exist
-if [ ! -f ~/.ssh/$SSH_KEY_NAME ]; then
+if [ ! -f ~/.ssh/pi_cluster_key ]; then
     echo "🔑 Generating new SSH key..."
-    ssh-keygen -t ed25519 -f ~/.ssh/$SSH_KEY_NAME -C "$USERNAME@pi-master" -N ""
+    ssh-keygen -t ed25519 -f ~/.ssh/pi_cluster_key -C "hezekiah@pi-master" -N ""
+else
+    echo "🔑 SSH key already exists, skipping generation."
 fi
 
 # Create SSH config
