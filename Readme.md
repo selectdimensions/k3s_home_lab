@@ -1,3 +1,8 @@
+[![Kubernetes Applications CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml)
+[![Puppet CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml)
+[![Security Scanning](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml)
+[![Terraform CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml)
+
 *Thinking...*
 
 > The user wants to switch from Ansible to Puppet for configuration management since Puppet is compatible with Windows, Mac, and Ubuntu. I need to restructure the entire project to use Puppet instead of Ansible while maintaining all the professional DevOps practices, CI/CD pipelines, and enhanced features they requested.
