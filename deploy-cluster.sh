@@ -43,7 +43,7 @@ for worker in "${WORKER_NODES[@]}"; do
     echo ""
     echo "📋 Installing K3s worker on $worker..."
     
-    ssh $worker << EOF
+    ssh -t $worker << EOF
 echo "🔽 Downloading and installing K3s worker..."
 curl -sfL https://get.k3s.io | K3S_URL=https://$MASTER_IP:6443 K3S_TOKEN=$TOKEN sh -s - agent --node-name $worker
 
@@ -62,7 +62,7 @@ echo ""
 echo "🧪 Verifying cluster status..."
 sleep 30
 
-ssh $MASTER_NODE << 'EOF'
+ssh -t $MASTER_NODE << 'EOF'
 echo "📊 Cluster nodes:"
 sudo k3s kubectl get nodes -o wide
 
