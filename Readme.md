@@ -81,6 +81,866 @@ pi-cluster-automation/
 └── README.md
 ```
 
+## 1. Enhanced GitHub Actions CI/CD
+
+### .github/workflows/terraform-ci.yml
+
+```yaml
+name: Terraform CI/CD
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-ci.yml'
+
+env:
+  TF_VERSION: '1.6.0'
+  TFLINT_VERSION: 'v0.48.0'
+  TERRAFORM_DOCS_VERSION: 'v0.16.0'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform validate
+
+      - name: Terraform Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform/
+
+  plan:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform plan -out=tfplan -var-file=terraform.tfvars
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/environments/${{ matrix.environment }}/plan.txt', 'utf8');
+            const output = `#### Terraform Plan - ${{ matrix.environment }} 📖
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`terraform
+            ${plan}
+            \`\`\`
+            
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+      max-parallel: 1
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        env:
+          TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
+          TF_VAR_minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+```
+
+### .github/workflows/puppet-ci.yml
+
+```yaml
+name: Puppet CI/CD
+
+on:
+  pull_request:
+    paths:
+      - 'puppet/**'
+      - '.github/workflows/puppet-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'puppet/**'
+
+env:
+  PUPPET_VERSION: '7.26.0'
+  PDK_VERSION: '3.0.0'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+
+      - name: Install PDK
+        run: |
+          wget https://puppet.com/download-puppet-development-kit
+          sudo dpkg -i puppet-development-kit_${PDK_VERSION}-1focal_amd64.deb
+
+      - name: Validate Puppet manifests
+        run: |
+          cd puppet
+          pdk validate
+
+      - name: Run Puppet lint
+        run: |
+          cd puppet
+          pdk validate puppet
+
+      - name: Check Puppet style
+        run: |
+          cd puppet
+          pdk validate ruby
+
+  test:
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        puppet_version: ['7.26.0', '8.0.0']
+        os: ['debian-11', 'ubuntu-22.04']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install dependencies
+        run: |
+          cd puppet
+          bundle install
+          
+      - name: Run rspec tests
+        run: |
+          cd puppet
+          bundle exec rake spec
+        env:
+          PUPPET_VERSION: ${{ matrix.puppet_version }}
+          FACTER_os_family: ${{ matrix.os }}
+
+      - name: Run acceptance tests
+        run: |
+          cd puppet
+          bundle exec rake beaker
+        if: github.event_name == 'push'
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+      max-parallel: 1
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Puppet Bolt
+        run: |
+          wget -O - https://apt.puppet.com/puppet-tools-release-focal.deb | sudo dpkg -i -
+          sudo apt-get update
+          sudo apt-get install -y puppet-bolt
+
+      - name: Configure SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_CLUSTER_SSH_KEY }}" > ~/.ssh/pi_cluster_key
+          chmod 600 ~/.ssh/pi_cluster_key
+
+      - name: Run Puppet Bolt deployment
+        run: |
+          cd puppet
+          bolt plan run pi_cluster_automation::deploy \
+            --targets @../inventory.yaml \
+            --inventoryfile ../inventory.yaml \
+            environment=${{ matrix.environment }} \
+            --run-as root \
+            --no-host-key-check
+```
+
+## 3. Enhanced Terraform Configuration
+
+### terraform/backend.tf
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "pi-cluster-terraform-state"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "pi-cluster-terraform-locks"
+    
+    # Enable versioning for state file history
+    versioning = true
+  }
+}
+```
+
+### terraform/modules/monitoring/main.tf
+
+```hcl
+resource "helm_release" "prometheus_stack" {
+  name             = "kube-prometheus-stack"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  namespace        = "monitoring"
+  create_namespace = true
+  version          = "51.0.3"
+
+  values = [
+    templatefile("${path.module}/values/prometheus-stack.yaml", {
+      grafana_password      = var.grafana_password
+      alertmanager_config   = var.alertmanager_config
+      retention_days        = var.retention_days
+      storage_class         = var.storage_class
+    })
+  ]
+
+  set {
+    name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"
+    value = "false"
+  }
+}
+
+resource "helm_release" "loki_stack" {
+  name             = "loki"
+  repository       = "https://grafana.github.io/helm-charts"
+  chart            = "loki-stack"
+  namespace        = "monitoring"
+  version          = "2.9.11"
+
+  values = [
+    file("${path.module}/values/loki-stack.yaml")
+  ]
+
+  depends_on = [helm_release.prometheus_stack]
+}
+```
+
+### terraform/modules/gitops/main.tf
+
+```hcl
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  version          = "5.46.8"
+
+  values = [
+    templatefile("${path.module}/values/argocd.yaml", {
+      github_ssh_key = var.github_ssh_key
+      ingress_host   = var.argocd_ingress_host
+    })
+  ]
+}
+
+resource "kubernetes_manifest" "argocd_apps" {
+  for_each = fileset("${path.module}/applications", "*.yaml")
+
+  manifest = yamldecode(file("${path.module}/applications/${each.value}"))
+
+  depends_on = [helm_release.argocd]
+}
+```
+
+### terraform/modules/backup/main.tf
+
+```hcl
+resource "helm_release" "velero" {
+  name             = "velero"
+  repository       = "https://vmware-tanzu.github.io/helm-charts"
+  chart            = "velero"
+  namespace        = "velero"
+  create_namespace = true
+  version          = "5.0.2"
+
+  values = [
+    templatefile("${path.module}/values/velero.yaml", {
+      backup_storage_location = var.backup_storage_location
+      minio_access_key       = var.minio_access_key
+      minio_secret_key       = var.minio_secret_key
+    })
+  ]
+}
+
+# Create backup schedules
+resource "kubernetes_manifest" "backup_schedules" {
+  for_each = var.backup_schedules
+
+  manifest = {
+    apiVersion = "velero.io/v1"
+    kind       = "Schedule"
+    metadata = {
+      name      = each.key
+      namespace = "velero"
+    }
+    spec = {
+      schedule = each.value.schedule
+      template = {
+        ttl = each.value.retention
+        includedNamespaces = each.value.namespaces
+        storageLocation = var.backup_storage_location
+        volumeSnapshotLocations = ["default"]
+      }
+    }
+  }
+
+  depends_on = [helm_release.velero]
+}
+```
+
+## 3. Kubernetes Manifests with Kustomize
+
+### k8s/base/kustomization.yaml
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - networkpolicies/
+  - rbac/
+  - monitoring/
+
+components:
+  - ../components/security-hardening
+```
+
+### k8s/overlays/prod/kustomization.yaml
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+patchesStrategicMerge:
+  - patches/increase-replicas.yaml
+  - patches/resource-limits.yaml
+
+configMapGenerator:
+  - name: app-config
+    envs:
+      - config/prod.env
+
+secretGenerator:
+  - name: app-secrets
+    envs:
+      - secrets/prod.env
+
+images:
+  - name: myapp
+    newTag: v1.2.3
+
+replicas:
+  - name: deployment-app
+    count: 3
+```
+
+## 4. Enhanced Scripts
+
+### scripts/disaster-recovery/restore-cluster.sh
+
+```bash
+#!/bin/bash
+# Disaster Recovery Script
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Configuration
+BACKUP_NAME="${1:-latest}"
+ENVIRONMENT="${2:-prod}"
+KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
+
+# Pre-flight checks
+preflight_checks() {
+    log "Running preflight checks..."
+    
+    # Check required tools
+    for tool in kubectl velero terraform ansible; do
+        if ! command -v $tool &> /dev/null; then
+            error "$tool is not installed"
+            exit 1
+        fi
+    done
+    
+    # Check cluster connectivity
+    if ! kubectl cluster-info &> /dev/null; then
+        error "Cannot connect to Kubernetes cluster"
+        exit 1
+    fi
+    
+    log "Preflight checks passed"
+}
+
+# Restore cluster state
+restore_cluster() {
+    log "Starting cluster restoration..."
+    
+    # 1. Restore Terraform state
+    log "Restoring Terraform state..."
+    cd terraform/environments/$ENVIRONMENT
+    terraform init
+    terraform refresh
+    
+    # 2. Ensure nodes are configured
+    log "Verifying node configuration..."
+    cd ../../../ansible
+    ansible-playbook -i inventories/$ENVIRONMENT/hosts.yml playbooks/verify-nodes.yml
+    
+    # 3. Restore Kubernetes resources via Velero
+    log "Restoring Kubernetes resources..."
+    if [ "$BACKUP_NAME" == "latest" ]; then
+        BACKUP_NAME=$(velero backup get --output json | jq -r '.items | sort_by(.metadata.creationTimestamp) | last | .metadata.name')
+    fi
+    
+    log "Using backup: $BACKUP_NAME"
+    velero restore create --from-backup $BACKUP_NAME --wait
+    
+    # 4. Verify restoration
+    log "Verifying restoration..."
+    kubectl get nodes
+    kubectl get pods -A
+    
+    # 5. Run post-restore hooks
+    log "Running post-restore hooks..."
+    ./scripts/post-restore-hooks.sh
+    
+    log "Restoration complete!"
+}
+
+# Main execution
+main() {
+    log "Pi Cluster Disaster Recovery"
+    log "============================"
+    
+    preflight_checks
+    
+    warning "This will restore the cluster to backup: $BACKUP_NAME"
+    read -p "Continue? (yes/no) " -r
+    
+    if [[ $REPLY == "yes" ]]; then
+        restore_cluster
+    else
+        log "Restoration cancelled"
+        exit 0
+    fi
+}
+
+main
+```
+
+## 5. Monitoring Configuration
+
+### monitoring/dashboards/cluster-overview.json
+
+```json
+{
+  "dashboard": {
+    "title": "Pi Cluster Overview",
+    "panels": [
+      {
+        "title": "Node Status",
+        "targets": [
+          {
+            "expr": "up{job=\"node-exporter\"}"
+          }
+        ]
+      },
+      {
+        "title": "CPU Usage per Node",
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)"
+          }
+        ]
+      },
+      {
+        "title": "Memory Usage per Node",
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100"
+          }
+        ]
+      },
+      {
+        "title": "Disk Usage",
+        "targets": [
+          {
+            "expr": "(node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### monitoring/alerts/critical-alerts.yaml
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: critical-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: node.alerts
+      interval: 30s
+      rules:
+        - alert: NodeDown
+          expr: up{job="node-exporter"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.instance }} is down"
+            
+        - alert: HighCPUUsage
+          expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on {{ $labels.instance }}"
+            
+        - alert: HighMemoryUsage
+          expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on {{ $labels.instance }}"
+            
+        - alert: DiskSpaceLow
+          expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low disk space on {{ $labels.instance }}"
+            
+    - name: kubernetes.alerts
+      rules:
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+```
+
+## 6. Makefile for Easy Operations
+
+```makefile
+.PHONY: help init validate plan apply destroy test backup restore
+
+ENVIRONMENT ?= dev
+BACKUP_NAME ?= manual-$(shell date +%Y%m%d-%H%M%S)
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+init: ## Initialize the project
+	cd terraform/environments/$(ENVIRONMENT) && terraform init
+	cd ansible && ansible-galaxy install -r requirements.yml
+	helm repo update
+
+validate: ## Validate configurations
+	cd terraform/environments/$(ENVIRONMENT) && terraform validate
+	cd ansible && ansible-lint
+	kubectl --dry-run=client apply -k k8s/overlays/$(ENVIRONMENT)
+
+plan: ## Plan infrastructure changes
+	cd terraform/environments/$(ENVIRONMENT) && terraform plan -var-file=terraform.tfvars
+
+apply: ## Apply infrastructure changes
+	cd terraform/environments/$(ENVIRONMENT) && terraform apply -var-file=terraform.tfvars -auto-approve
+
+destroy: ## Destroy infrastructure (use with caution!)
+	@echo "WARNING: This will destroy all infrastructure in $(ENVIRONMENT)"
+	@read -p "Type 'destroy-$(ENVIRONMENT)' to confirm: " confirm && \
+	if [ "$$confirm" = "destroy-$(ENVIRONMENT)" ]; then \
+		cd terraform/environments/$(ENVIRONMENT) && terraform destroy -var-file=terraform.tfvars -auto-approve; \
+	else \
+		echo "Destruction cancelled"; \
+	fi
+
+test: ## Run all tests
+	cd tests/terraform && go test -v ./...
+	cd ansible && molecule test
+	cd tests/integration && pytest -v
+
+backup: ## Create a manual backup
+	velero backup create $(BACKUP_NAME) --wait
+	@echo "Backup $(BACKUP_NAME) created successfully"
+
+restore: ## Restore from backup
+	./scripts/disaster-recovery/restore-cluster.sh $(BACKUP_NAME) $(ENVIRONMENT)
+
+deploy-app: ## Deploy application via GitOps
+	kubectl apply -f k8s/applications/$(APP).yaml
+
+monitor: ## Open monitoring dashboards
+	@echo "Opening Grafana..."
+	kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+
+logs: ## Tail logs for a specific app
+	kubectl logs -n $(NAMESPACE) -l app=$(APP) -f --tail=100
+
+ssh-node: ## SSH into a node
+	ssh -i ~/.ssh/keys/hobby/pi_k3s_cluster $(USER)@$(NODE)
+```
+
+## 7. Enhanced Documentation
+
+### docs/runbooks/node-failure-recovery.md
+
+```markdown
+# Node Failure Recovery Runbook
+
+## Overview
+This runbook describes the process for recovering from a node failure in the Pi cluster.
+
+## Prerequisites
+- Access to the cluster
+- SSH access to healthy nodes
+- Backup of failed node's data (if applicable)
+
+## Detection
+Node failure is detected through:
+1. Prometheus alerts (NodeDown)
+2. `kubectl get nodes` showing NotReady status
+3. Physical inspection
+
+## Recovery Steps
+
+### 1. Assess the Situation
+```bash
+# Check node status
+kubectl get nodes
+
+# Check recent events
+kubectl get events --sort-by='.lastTimestamp'
+
+# Check node conditions
+kubectl describe node <failed-node>
+```
+
+### 2. Hardware Recovery
+
+#### Option A: Soft Recovery
+```bash
+# Try to SSH into the node
+ssh pi@<node-ip>
+
+# If accessible, check system logs
+sudo journalctl -xe
+
+# Restart K3s service
+sudo systemctl restart k3s-agent
+```
+
+#### Option B: Hard Recovery
+1. Power cycle the Raspberry Pi
+2. Wait for boot (2-3 minutes)
+3. Verify connectivity: `ping <node-ip>`
+
+### 3. Node Replacement
+If hardware failure is confirmed:
+
+```bash
+# Cordon the node
+kubectl cordon <failed-node>
+
+# Drain workloads
+kubectl drain <failed-node> --ignore-daemonsets --delete-emptydir-data
+
+# Remove from cluster
+kubectl delete node <failed-node>
+
+# Prepare new SD card
+./scripts/prepare-sd-card.sh <node-name> <node-ip>
+
+# Re-run Ansible playbook
+cd ansible
+ansible-playbook -i inventories/prod/hosts.yml playbooks/install-k3s.yml --limit <node-name>
+```
+
+### 4. Verification
+```bash
+# Verify node joined cluster
+kubectl get nodes
+
+# Check pod distribution
+kubectl get pods -A -o wide | grep <node-name>
+
+# Run cluster health check
+./scripts/health-check.sh
+```
+
+## Rollback
+If recovery fails:
+1. Remove problematic node from load balancer
+2. Scale up deployments on remaining nodes
+3. Schedule hardware replacement
+
+## Post-Incident
+1. Update monitoring alerts if needed
+2. Document failure cause
+3. Update hardware inventory
+4. Schedule preventive maintenance
+
+## Benefits of This Enhanced Structure
+
+1. **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
+2. **GitOps**: ArgoCD for declarative application deployment
+3. **Disaster Recovery**: Velero for backup/restore capabilities
+4. **Monitoring**: Comprehensive monitoring with Prometheus, Grafana, and Loki
+5. **Security**: Security scanning, secrets management, and network policies
+6. **Multi-Environment**: Support for dev, staging, and production
+7. **Testing**: Automated testing with Molecule, Terratest, and integration tests
+8. **Documentation**: Comprehensive runbooks and architecture docs
+9. **Resilience**: Automated health checks and recovery procedures
+10. **Ease of Use**: Makefile for common operations
+
+This structure provides a production-ready, resilient, and easily maintainable Pi cluster infrastructure.
+
+
+
+
 ## 1. Puppet Configuration
 
 ### puppet/bolt-project.yaml
@@ -424,132 +1284,6 @@ plan pi_cluster_automation::deploy (
   out::message("Deployment complete!")
   return $health_check
 }
-```
-
-## 2. Enhanced GitHub Actions with Puppet
-
-### .github/workflows/puppet-ci.yml
-
-```yaml
-name: Puppet CI/CD
-
-on:
-  pull_request:
-    paths:
-      - 'puppet/**'
-      - '.github/workflows/puppet-ci.yml'
-  push:
-    branches:
-      - main
-    paths:
-      - 'puppet/**'
-
-env:
-  PUPPET_VERSION: '7.26.0'
-  PDK_VERSION: '3.0.0'
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-          bundler-cache: true
-
-      - name: Install PDK
-        run: |
-          wget https://puppet.com/download-puppet-development-kit
-          sudo dpkg -i puppet-development-kit_${PDK_VERSION}-1focal_amd64.deb
-
-      - name: Validate Puppet manifests
-        run: |
-          cd puppet
-          pdk validate
-
-      - name: Run Puppet lint
-        run: |
-          cd puppet
-          pdk validate puppet
-
-      - name: Check Puppet style
-        run: |
-          cd puppet
-          pdk validate ruby
-
-  test:
-    needs: validate
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        puppet_version: ['7.26.0', '8.0.0']
-        os: ['debian-11', 'ubuntu-22.04']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-
-      - name: Install dependencies
-        run: |
-          cd puppet
-          bundle install
-          
-      - name: Run rspec tests
-        run: |
-          cd puppet
-          bundle exec rake spec
-        env:
-          PUPPET_VERSION: ${{ matrix.puppet_version }}
-          FACTER_os_family: ${{ matrix.os }}
-
-      - name: Run acceptance tests
-        run: |
-          cd puppet
-          bundle exec rake beaker
-        if: github.event_name == 'push'
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    strategy:
-      matrix:
-        environment: [dev, staging, prod]
-      max-parallel: 1
-    environment: ${{ matrix.environment }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Puppet Bolt
-        run: |
-          wget -O - https://apt.puppet.com/puppet-tools-release-focal.deb | sudo dpkg -i -
-          sudo apt-get update
-          sudo apt-get install -y puppet-bolt
-
-      - name: Configure SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PI_CLUSTER_SSH_KEY }}" > ~/.ssh/pi_cluster_key
-          chmod 600 ~/.ssh/pi_cluster_key
-
-      - name: Run Puppet Bolt deployment
-        run: |
-          cd puppet
-          bolt plan run pi_cluster_automation::deploy \
-            --targets @../inventory.yaml \
-            --inventoryfile ../inventory.yaml \
-            environment=${{ matrix.environment }} \
-            --run-as root \
-            --no-host-key-check
 ```
 
 ## 3. Terraform Integration with Puppet

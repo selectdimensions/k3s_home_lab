@@ -8,17 +8,12 @@ config:
   puppet:
     server: puppet.cluster.local
     environment: production
-  winrm:
-    user: Administrator
-    ssl: true
-    ssl-verify: false
 
 groups:
   - name: all
     groups:
       - masters
       - workers
-      - management
     vars:
       puppet_server: puppet.cluster.local
       cluster_name: pi-k3s-cluster
@@ -72,47 +67,3 @@ groups:
             workload-type: "general"
     vars:
       k3s_agent_args: ""
-
-  - name: management
-    targets:
-      - uri: 192.168.0.100
-        name: puppet-server
-        alias: puppet.cluster.local
-        transport: ssh
-        vars:
-          role: management
-          services:
-            - puppet-server
-            - bolt-orchestrator
-      - uri: 192.168.0.101
-        name: monitoring-server
-        transport: ssh
-        vars:
-          role: management
-          services:
-            - prometheus
-            - grafana
-            - alertmanager
-
-  - name: windows_nodes
-    targets:
-      - uri: 192.168.0.150
-        name: win-node-1
-        transport: winrm
-        vars:
-          role: windows-worker
-          puppet_environment: production
-    config:
-      winrm:
-        user: Administrator
-        password:
-          _plugin: prompt
-          message: "Enter password for Windows nodes"
-
-  - name: development
-    targets:
-      - uri: localhost
-        transport: local
-        vars:
-          role: development
-          puppet_environment: development
