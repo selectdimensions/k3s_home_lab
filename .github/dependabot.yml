@@ -1,0 +1,92 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "DevOps-team"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Terraform providers
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "infrastructure-team"
+    labels:
+      - "dependencies"
+      - "terraform"
+
+  # Ruby dependencies for Puppet
+  - package-ecosystem: "bundler"
+    directory: "/puppet"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "puppet-team"
+    labels:
+      - "dependencies"
+      - "puppet"
+    ignore:
+      # Ignore major version updates for critical gems
+      - dependency-name: "puppet"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "puppet-lint"
+        update-types: ["version-update:semver-major"]
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "DevOps-team"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/scripts"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Helm chart dependencies
+  - package-ecosystem: "helm"
+    directory: "/k8s/helm-charts"
+    registries: "*"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "helm"
+
+# Security updates get priority
+security-updates:
+  open-pull-requests-limit: 10

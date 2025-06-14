@@ -1,0 +1,192 @@
+name: Security Scanning
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Setup Ruby for Puppet
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+
+      - name: Bundle audit
+        run: |
+          cd puppet
+          gem install bundler-audit
+          bundle audit check --update
+
+      - name: Python safety check
+        run: |
+          pip install safety
+          safety check --full-report
+
+  container-scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - 'postgres:15'
+          - 'minio/minio:latest'
+          - 'grafana/grafana:latest'
+          - 'prom/prometheus:latest'
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif'
+
+  infrastructure-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkov Infrastructure Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: all
+          output_format: sarif
+          output_file_path: checkov.sarif
+          skip_check: CKV_DOCKER_2,CKV_DOCKER_3
+
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov.sarif
+
+      - name: tfsec PR commenter
+        uses: aquasecurity/tfsec-pr-commenter-action@v1.3.1
+        with:
+          github_token: ${{ github.token }}
+          working_directory: terraform
+
+  puppet-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install puppet-lint security plugins
+        run: |
+          gem install puppet-lint
+          gem install puppet-lint-security-plugins
+
+      - name: Run puppet-lint security checks
+        run: |
+          cd puppet
+          puppet-lint --with-context --fail-on-warnings \
+            --no-documentation-check \
+            --no-140chars-check \
+            site-modules/
+
+      - name: Metadata validation
+        run: |
+          cd puppet
+          for module in site-modules/*/; do
+            if [ -f "$module/metadata.json" ]; then
+              echo "Validating $module metadata..."
+              python -m json.tool "$module/metadata.json" > /dev/null
+            fi
+          done
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  compliance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Inspec compliance tests
+        run: |
+          # Install InSpec
+          curl https://omnitruck.chef.io/install.sh | sudo bash -s -- -P inspec
+          
+          # Run compliance profiles
+          inspec exec compliance/ --reporter json:compliance-results.json
+
+      - name: Upload compliance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-results
+          path: compliance-results.json
+
+  create-issues:
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, container-scan, infrastructure-scan, secrets-scan]
+    if: failure()
+    steps:
+      - name: Create issue for failed scans
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Security Scan Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `## Security Scan Results
+              
+              One or more security scans have failed. Please review the workflow results.
+              
+              **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+              
+              **Failed Jobs:**
+              - [ ] Review and fix security vulnerabilities
+              - [ ] Update dependencies
+              - [ ] Re-run security scans
+              `,
+              labels: ['security', 'automated']
+            });

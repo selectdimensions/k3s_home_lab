@@ -1,0 +1,194 @@
+name: Kubernetes Applications CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/k8s-apps-cd.yml'
+  pull_request:
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/k8s-apps-cd.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  KUBECTL_VERSION: '1.28.4'
+  KUSTOMIZE_VERSION: '5.2.1'
+  HELM_VERSION: '3.13.2'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v${{ env.KUBECTL_VERSION }}
+
+      - name: Setup Kustomize
+        run: |
+          curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v${{ env.HELM_VERSION }}
+
+      - name: Validate Kubernetes manifests
+        run: |
+          # Validate base manifests
+          kubectl apply --dry-run=client -f k8s/base/
+          
+          # Validate kustomizations
+          for env in dev staging prod; do
+            echo "Validating $env overlay..."
+            kustomize build k8s/overlays/$env | kubectl apply --dry-run=client -f -
+          done
+
+      - name: Helm template validation
+        run: |
+          # Add helm repos
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          
+          # Validate helm charts
+          for chart in k8s/helm-charts/*; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Validating $chart..."
+              helm lint $chart
+              helm template test $chart > /dev/null
+            fi
+          done
+
+      - name: Run Kubeval
+        run: |
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo cp kubeval /usr/local/bin
+          
+          # Validate with kubeval
+          find k8s -name '*.yaml' -o -name '*.yml' | xargs kubeval --strict
+
+      - name: Policy validation with OPA
+        run: |
+          # Install OPA
+          curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64
+          chmod +x opa
+          sudo mv opa /usr/local/bin
+          
+          # Run policy checks
+          for policy in k8s/policies/*.rego; do
+            echo "Checking policy: $policy"
+            for manifest in k8s/base/*.yaml; do
+              opa eval -d $policy -i $manifest "data.kubernetes.deny[msg]"
+            done
+          done
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Kubesec scan
+        run: |
+          # Install kubesec
+          wget https://github.com/controlplaneio/kubesec/releases/download/v2.13.0/kubesec_linux_amd64.tar.gz
+          tar xf kubesec_linux_amd64.tar.gz
+          sudo mv kubesec /usr/local/bin/
+          
+          # Scan manifests
+          find k8s -name '*.yaml' -o -name '*.yml' | while read manifest; do
+            echo "Scanning $manifest..."
+            kubesec scan $manifest
+          done
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'k8s/'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+      max-parallel: 1
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v${{ env.KUBECTL_VERSION }}
+
+      - name: Setup Kustomize
+        run: |
+          curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Deploy with Kustomize
+        run: |
+          # Set the correct context
+          kubectl config use-context ${{ matrix.environment }}-cluster
+          
+          # Apply the configuration
+          kustomize build k8s/overlays/${{ matrix.environment }} | kubectl apply -f -
+          
+          # Wait for rollout
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/part-of=pi-cluster -n default --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          # Check deployment status
+          kubectl get deployments -A
+          kubectl get pods -A
+          kubectl get svc -A
+          
+          # Run smoke tests
+          ./scripts/smoke-tests.sh ${{ matrix.environment }}
+
+      - name: Send notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Deployment to ${{ matrix.environment }} ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

@@ -1,0 +1,118 @@
+version: 2
+config:
+  ssh:
+    user: hezekiah
+    private-key: ~/.ssh/keys/hobby/pi_k3s_cluster
+    host-key-check: false
+    run-as: root
+  puppet:
+    server: puppet.cluster.local
+    environment: production
+  winrm:
+    user: Administrator
+    ssl: true
+    ssl-verify: false
+
+groups:
+  - name: all
+    groups:
+      - masters
+      - workers
+      - management
+    vars:
+      puppet_server: puppet.cluster.local
+      cluster_name: pi-k3s-cluster
+      cluster_domain: cluster.local
+
+  - name: masters
+    targets:
+      - uri: 192.168.0.120
+        name: pi-master
+        alias: pi-master.cluster.local
+        vars:
+          role: master
+          k3s_role: server
+          node_labels:
+            node-role.kubernetes.io/master: "true"
+            node-type: "raspberry-pi"
+    vars:
+      k3s_server_args: "--disable traefik --disable servicelb"
+
+  - name: workers
+    targets:
+      - uri: 192.168.0.121
+        name: pi-worker-1
+        alias: pi-worker-1.cluster.local
+        vars:
+          role: worker
+          k3s_role: agent
+          node_labels:
+            node-role.kubernetes.io/worker: "true"
+            node-type: "raspberry-pi"
+            workload-type: "general"
+      - uri: 192.168.0.122
+        name: pi-worker-2
+        alias: pi-worker-2.cluster.local
+        vars:
+          role: worker
+          k3s_role: agent
+          node_labels:
+            node-role.kubernetes.io/worker: "true"
+            node-type: "raspberry-pi"
+            workload-type: "data"
+      - uri: 192.168.0.123
+        name: pi-worker-3
+        alias: pi-worker-3.cluster.local
+        vars:
+          role: worker
+          k3s_role: agent
+          node_labels:
+            node-role.kubernetes.io/worker: "true"
+            node-type: "raspberry-pi"
+            workload-type: "general"
+    vars:
+      k3s_agent_args: ""
+
+  - name: management
+    targets:
+      - uri: 192.168.0.100
+        name: puppet-server
+        alias: puppet.cluster.local
+        transport: ssh
+        vars:
+          role: management
+          services:
+            - puppet-server
+            - bolt-orchestrator
+      - uri: 192.168.0.101
+        name: monitoring-server
+        transport: ssh
+        vars:
+          role: management
+          services:
+            - prometheus
+            - grafana
+            - alertmanager
+
+  - name: windows_nodes
+    targets:
+      - uri: 192.168.0.150
+        name: win-node-1
+        transport: winrm
+        vars:
+          role: windows-worker
+          puppet_environment: production
+    config:
+      winrm:
+        user: Administrator
+        password:
+          _plugin: prompt
+          message: "Enter password for Windows nodes"
+
+  - name: development
+    targets:
+      - uri: localhost
+        transport: local
+        vars:
+          role: development
+          puppet_environment: development

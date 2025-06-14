@@ -1,0 +1,39 @@
+{
+  "dashboard": {
+    "title": "Pi Cluster Overview",
+    "panels": [
+      {
+        "title": "Node Status",
+        "targets": [
+          {
+            "expr": "up{job=\"node-exporter\"}"
+          }
+        ]
+      },
+      {
+        "title": "CPU Usage per Node",
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)"
+          }
+        ]
+      },
+      {
+        "title": "Memory Usage per Node",
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100"
+          }
+        ]
+      },
+      {
+        "title": "Disk Usage",
+        "targets": [
+          {
+            "expr": "(node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100"
+          }
+        ]
+      }
+    ]
+  }
+}
