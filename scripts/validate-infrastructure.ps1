@@ -7,13 +7,11 @@ param(
     [string]$Environment = "dev",
     [switch]$SkipPuppet,
     [switch]$SkipTerraform,
-    [switch]$SkipK8s,
-    [switch]$Verbose
+    [switch]$SkipK8s
 )
 
 # Set error action and verbose preference
 $ErrorActionPreference = "Stop"
-if ($Verbose) { $VerbosePreference = "Continue" }
 
 # Colors for output
 function Write-TestStep {

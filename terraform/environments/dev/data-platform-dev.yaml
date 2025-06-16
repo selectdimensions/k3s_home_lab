@@ -1,0 +1,30 @@
+"cluster_name": "pi-k3s-dev"
+"components":
+  "minio":
+    "enabled": false
+  "nifi":
+    "enabled": true
+    "replicas": 1
+    "resources":
+      "limits":
+        "cpu": "500m"
+        "memory": "1Gi"
+      "requests":
+        "cpu": "200m"
+        "memory": "512Mi"
+  "postgresql":
+    "enabled": true
+    "storage_size": "5Gi"
+  "trino":
+    "coordinator_replicas": 1
+    "enabled": true
+    "resources":
+      "limits":
+        "cpu": "500m"
+        "memory": "1Gi"
+      "requests":
+        "cpu": "200m"
+        "memory": "512Mi"
+    "worker_replicas": 1
+"environment": "dev"
+"namespace": "data-platform-dev"

@@ -1,0 +1,279 @@
+{
+  "Timestamp": "2025-06-16T15:37:27.7576754-04:00",
+  "Summary": {
+    "PassedChecks": 26,
+    "FailedChecks": 1,
+    "TotalChecks": 33
+  },
+  "CheckResults": [
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:23.6341828-04:00",
+      "Check": "PowerShell Version",
+      "Details": "PowerShell 7.5.1 (recommended)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:23.7344867-04:00",
+      "Check": "helm Command",
+      "Details": "Found: Error: unknown flag: --version (optional)",
+      "Action": "",
+      "Status": "INFO"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:23.7642651-04:00",
+      "Check": "git Command",
+      "Details": "Found: git version 2.49.0.windows.1",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:23.8721358-04:00",
+      "Check": "terraform Command",
+      "Details": "Found: Terraform v1.12.1",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:23.9633156-04:00",
+      "Check": "kubectl Command",
+      "Details": "Found: error: unknown flag: --version (optional)",
+      "Action": "",
+      "Status": "INFO"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:24.0078335-04:00",
+      "Check": "docker Command",
+      "Details": "Found: Docker version 28.2.2, build e6534b4 (optional)",
+      "Action": "",
+      "Status": "INFO"
+    },
+    {
+      "Category": "Prerequisites",
+      "Timestamp": "2025-06-16T15:37:24.0415198-04:00",
+      "Check": "Internet Connectivity",
+      "Details": "Can reach GitHub",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0526455-04:00",
+      "Check": "Environment config",
+      "Details": "terraform/environments/dev (18 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0576415-04:00",
+      "Check": "Terraform modules",
+      "Details": "terraform/modules (18 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.062581-04:00",
+      "Check": "Puppet plans",
+      "Details": "puppet/plans (5 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0666803-04:00",
+      "Check": "Puppet tasks",
+      "Details": "puppet/tasks (23 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0696637-04:00",
+      "Check": "K8s base config",
+      "Details": "k8s/base (2 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0729379-04:00",
+      "Check": "CI/CD workflows",
+      "Details": ".github/workflows (10 files)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0748153-04:00",
+      "Check": "Build script",
+      "Details": "Make.ps1 (23209 bytes)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0769141-04:00",
+      "Check": "Inventory template",
+      "Details": "inventory.yaml.example (1488 bytes)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0789385-04:00",
+      "Check": "Environment main config",
+      "Details": "terraform/environments/dev/main.tf (4309 bytes)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Structure",
+      "Timestamp": "2025-06-16T15:37:24.0808452-04:00",
+      "Check": "Bolt configuration",
+      "Details": "puppet/bolt-project.yaml (101 bytes)",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Configuration",
+      "Timestamp": "2025-06-16T15:37:25.559356-04:00",
+      "Check": "Inventory File",
+      "Details": "inventory.yaml exists and is valid",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Configuration",
+      "Timestamp": "2025-06-16T15:37:25.5632981-04:00",
+      "Check": "Inventory IPs",
+      "Details": "Using default IP addresses",
+      "Action": "",
+      "Status": "INFO"
+    },
+    {
+      "Category": "Configuration",
+      "Timestamp": "2025-06-16T15:37:25.566361-04:00",
+      "Check": "Terraform Variables",
+      "Details": "terraform.tfvars properly configured",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Configuration",
+      "Timestamp": "2025-06-16T15:37:25.5687207-04:00",
+      "Check": "SSH Keys",
+      "Details": "SSH keys not found in default location",
+      "Action": "Generate SSH key pair if needed",
+      "Status": "WARN"
+    },
+    {
+      "Category": "Terraform",
+      "Timestamp": "2025-06-16T15:37:25.6846634-04:00",
+      "Check": "Code Formatting",
+      "Details": "Code is properly formatted",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Terraform",
+      "Timestamp": "2025-06-16T15:37:26.300569-04:00",
+      "Check": "Initialization",
+      "Details": "Initialization successful",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Terraform",
+      "Timestamp": "2025-06-16T15:37:26.8499771-04:00",
+      "Check": "Validation",
+      "Details": "Configuration valid",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6316276-04:00",
+      "Check": "Bolt Command",
+      "Details": "Bolt available: 3.29.0",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6335333-04:00",
+      "Check": "Bolt Configuration",
+      "Details": "bolt-project.yaml missing",
+      "Action": "Create bolt configuration",
+      "Status": "FAIL"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6363533-04:00",
+      "Check": "Plan: deploy_simple.pp",
+      "Details": "Plan exists",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.63829-04:00",
+      "Check": "Plan: k3s_deploy.pp",
+      "Details": "Plan exists",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6399685-04:00",
+      "Check": "Task: check_k3s_prereqs",
+      "Details": "Task complete",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6418298-04:00",
+      "Check": "Task: install_k3s_master",
+      "Details": "Task complete",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Puppet",
+      "Timestamp": "2025-06-16T15:37:27.6438541-04:00",
+      "Check": "Task: cluster_status",
+      "Details": "Task complete",
+      "Action": "",
+      "Status": "PASS"
+    },
+    {
+      "Category": "Security",
+      "Timestamp": "2025-06-16T15:37:27.7310894-04:00",
+      "Check": "Hardcoded Secrets",
+      "Details": "Found potential secrets: prepare-pis.ps1: Hardcoded passwords, variables.tf: Hardcoded passwords",
+      "Action": "Review and use variables/secrets management",
+      "Status": "WARN"
+    },
+    {
+      "Category": "Security",
+      "Timestamp": "2025-06-16T15:37:27.7341365-04:00",
+      "Check": "Git Ignore",
+      "Details": "All sensitive files ignored",
+      "Action": "",
+      "Status": "PASS"
+    }
+  ],
+  "Environment": "dev",
+  "ReadinessScore": 78.8,
+  "ActionableItems": [
+    "Create bolt configuration"
+  ]
+}

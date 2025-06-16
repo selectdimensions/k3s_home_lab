@@ -5,7 +5,7 @@ terraform {
     region         = "us-east-1"
     encrypt        = true
     dynamodb_table = "pi-cluster-terraform-locks"
-    
+
     # Enable versioning for state file history
     versioning = true
   }

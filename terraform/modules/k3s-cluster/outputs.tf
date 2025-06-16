@@ -51,12 +51,12 @@ output "deployment_params" {
   value = {
     environment      = var.environment
     cluster_name     = var.cluster_name
-    k3s_version     = var.k3s_version
-    k3s_token       = local.actual_k3s_token
-    cluster_cidr    = var.cluster_cidr
-    service_cidr    = var.service_cidr
+    k3s_version      = var.k3s_version
+    k3s_token        = local.actual_k3s_token
+    cluster_cidr     = var.cluster_cidr
+    service_cidr     = var.service_cidr
     metallb_ip_range = var.metallb_ip_range
-    master_ip       = local.cluster_config.master_nodes[0].ip
+    master_ip        = local.cluster_config.master_nodes[0].ip
   }
   sensitive = true
 }

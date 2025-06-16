@@ -1,0 +1,4 @@
+"prometheus":
+  "retention": "7d"
+  "storage":
+    "size": "5Gi"

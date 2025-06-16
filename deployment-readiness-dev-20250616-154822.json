@@ -1,14 +1,14 @@
 {
-  "Timestamp": "2025-06-16T14:46:50.4410376-04:00",
+  "Timestamp": "2025-06-16T15:48:22.6685565-04:00",
   "Summary": {
-    "PassedChecks": 24,
-    "FailedChecks": 2,
-    "TotalChecks": 32
+    "PassedChecks": 26,
+    "FailedChecks": 1,
+    "TotalChecks": 33
   },
   "CheckResults": [
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:47.6503007-04:00",
+      "Timestamp": "2025-06-16T15:48:17.9808895-04:00",
       "Check": "PowerShell Version",
       "Details": "PowerShell 7.5.1 (recommended)",
       "Action": "",
@@ -16,7 +16,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:47.7510437-04:00",
+      "Timestamp": "2025-06-16T15:48:18.0960432-04:00",
       "Check": "helm Command",
       "Details": "Found: Error: unknown flag: --version (optional)",
       "Action": "",
@@ -24,7 +24,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:47.7798605-04:00",
+      "Timestamp": "2025-06-16T15:48:18.1326518-04:00",
       "Check": "git Command",
       "Details": "Found: git version 2.49.0.windows.1",
       "Action": "",
@@ -32,7 +32,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:47.8888991-04:00",
+      "Timestamp": "2025-06-16T15:48:18.2550553-04:00",
       "Check": "terraform Command",
       "Details": "Found: Terraform v1.12.1",
       "Action": "",
@@ -40,7 +40,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:48.0016015-04:00",
+      "Timestamp": "2025-06-16T15:48:18.3608419-04:00",
       "Check": "kubectl Command",
       "Details": "Found: error: unknown flag: --version (optional)",
       "Action": "",
@@ -48,7 +48,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:48.0497906-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4071971-04:00",
       "Check": "docker Command",
       "Details": "Found: Docker version 28.2.2, build e6534b4 (optional)",
       "Action": "",
@@ -56,7 +56,7 @@
     },
     {
       "Category": "Prerequisites",
-      "Timestamp": "2025-06-16T14:46:48.0829387-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4433568-04:00",
       "Check": "Internet Connectivity",
       "Details": "Can reach GitHub",
       "Action": "",
@@ -64,15 +64,15 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.0945608-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4530783-04:00",
       "Check": "Environment config",
-      "Details": "terraform/environments/dev (18 files)",
+      "Details": "terraform/environments/dev (39 files)",
       "Action": "",
       "Status": "PASS"
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.0993666-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4571595-04:00",
       "Check": "Terraform modules",
       "Details": "terraform/modules (18 files)",
       "Action": "",
@@ -80,7 +80,7 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1045745-04:00",
+      "Timestamp": "2025-06-16T15:48:18.460656-04:00",
       "Check": "Puppet plans",
       "Details": "puppet/plans (5 files)",
       "Action": "",
@@ -88,7 +88,7 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1074094-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4671739-04:00",
       "Check": "Puppet tasks",
       "Details": "puppet/tasks (23 files)",
       "Action": "",
@@ -96,7 +96,7 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1110911-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4707439-04:00",
       "Check": "K8s base config",
       "Details": "k8s/base (2 files)",
       "Action": "",
@@ -104,7 +104,7 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1144413-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4745386-04:00",
       "Check": "CI/CD workflows",
       "Details": ".github/workflows (10 files)",
       "Action": "",
@@ -112,15 +112,15 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1168676-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4762617-04:00",
       "Check": "Build script",
-      "Details": "Make.ps1 (23561 bytes)",
+      "Details": "Make.ps1 (23192 bytes)",
       "Action": "",
       "Status": "PASS"
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1188353-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4794439-04:00",
       "Check": "Inventory template",
       "Details": "inventory.yaml.example (1488 bytes)",
       "Action": "",
@@ -128,15 +128,15 @@
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1212675-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4817199-04:00",
       "Check": "Environment main config",
-      "Details": "terraform/environments/dev/main.tf (4230 bytes)",
+      "Details": "terraform/environments/dev/main.tf (4309 bytes)",
       "Action": "",
       "Status": "PASS"
     },
     {
       "Category": "Structure",
-      "Timestamp": "2025-06-16T14:46:48.1229362-04:00",
+      "Timestamp": "2025-06-16T15:48:18.4839957-04:00",
       "Check": "Bolt configuration",
       "Details": "puppet/bolt-project.yaml (101 bytes)",
       "Action": "",
@@ -144,15 +144,23 @@
     },
     {
       "Category": "Configuration",
-      "Timestamp": "2025-06-16T14:46:48.1407525-04:00",
+      "Timestamp": "2025-06-16T15:48:20.2229367-04:00",
       "Check": "Inventory File",
-      "Details": "Invalid YAML format",
-      "Action": "Fix inventory.yaml syntax",
-      "Status": "FAIL"
+      "Details": "inventory.yaml exists and is valid",
+      "Action": "",
+      "Status": "PASS"
     },
     {
       "Category": "Configuration",
-      "Timestamp": "2025-06-16T14:46:48.1451969-04:00",
+      "Timestamp": "2025-06-16T15:48:20.2255626-04:00",
+      "Check": "Inventory IPs",
+      "Details": "Using default IP addresses",
+      "Action": "",
+      "Status": "INFO"
+    },
+    {
+      "Category": "Configuration",
+      "Timestamp": "2025-06-16T15:48:20.2273494-04:00",
       "Check": "Terraform Variables",
       "Details": "terraform.tfvars properly configured",
       "Action": "",
@@ -160,7 +168,7 @@
     },
     {
       "Category": "Configuration",
-      "Timestamp": "2025-06-16T14:46:48.1471155-04:00",
+      "Timestamp": "2025-06-16T15:48:20.2301321-04:00",
       "Check": "SSH Keys",
       "Details": "SSH keys not found in default location",
       "Action": "Generate SSH key pair if needed",
@@ -168,15 +176,15 @@
     },
     {
       "Category": "Terraform",
-      "Timestamp": "2025-06-16T14:46:48.2963999-04:00",
+      "Timestamp": "2025-06-16T15:48:20.3585542-04:00",
       "Check": "Code Formatting",
-      "Details": "Formatting issues found",
-      "Action": "Run: terraform fmt",
-      "Status": "WARN"
+      "Details": "Code is properly formatted",
+      "Action": "",
+      "Status": "PASS"
     },
     {
       "Category": "Terraform",
-      "Timestamp": "2025-06-16T14:46:48.8928981-04:00",
+      "Timestamp": "2025-06-16T15:48:21.0470638-04:00",
       "Check": "Initialization",
       "Details": "Initialization successful",
       "Action": "",
@@ -184,7 +192,7 @@
     },
     {
       "Category": "Terraform",
-      "Timestamp": "2025-06-16T14:46:49.474216-04:00",
+      "Timestamp": "2025-06-16T15:48:21.6717524-04:00",
       "Check": "Validation",
       "Details": "Configuration valid",
       "Action": "",
@@ -192,7 +200,7 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.326456-04:00",
+      "Timestamp": "2025-06-16T15:48:22.551851-04:00",
       "Check": "Bolt Command",
       "Details": "Bolt available: 3.29.0",
       "Action": "",
@@ -200,15 +208,15 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.3398379-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5535729-04:00",
       "Check": "Bolt Configuration",
-      "Details": "Invalid bolt-project.yaml",
-      "Action": "Fix YAML syntax",
+      "Details": "bolt-project.yaml missing",
+      "Action": "Create bolt configuration",
       "Status": "FAIL"
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.3433779-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5560073-04:00",
       "Check": "Plan: deploy_simple.pp",
       "Details": "Plan exists",
       "Action": "",
@@ -216,7 +224,7 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.3473536-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5576921-04:00",
       "Check": "Plan: k3s_deploy.pp",
       "Details": "Plan exists",
       "Action": "",
@@ -224,7 +232,7 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.3493184-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5594681-04:00",
       "Check": "Task: check_k3s_prereqs",
       "Details": "Task complete",
       "Action": "",
@@ -232,7 +240,7 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.352904-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5623378-04:00",
       "Check": "Task: install_k3s_master",
       "Details": "Task complete",
       "Action": "",
@@ -240,7 +248,7 @@
     },
     {
       "Category": "Puppet",
-      "Timestamp": "2025-06-16T14:46:50.3542613-04:00",
+      "Timestamp": "2025-06-16T15:48:22.5646191-04:00",
       "Check": "Task: cluster_status",
       "Details": "Task complete",
       "Action": "",
@@ -248,7 +256,7 @@
     },
     {
       "Category": "Security",
-      "Timestamp": "2025-06-16T14:46:50.419801-04:00",
+      "Timestamp": "2025-06-16T15:48:22.6466134-04:00",
       "Check": "Hardcoded Secrets",
       "Details": "Found potential secrets: prepare-pis.ps1: Hardcoded passwords, variables.tf: Hardcoded passwords",
       "Action": "Review and use variables/secrets management",
@@ -256,7 +264,7 @@
     },
     {
       "Category": "Security",
-      "Timestamp": "2025-06-16T14:46:50.4218498-04:00",
+      "Timestamp": "2025-06-16T15:48:22.648883-04:00",
       "Check": "Git Ignore",
       "Details": "All sensitive files ignored",
       "Action": "",
@@ -264,9 +272,8 @@
     }
   ],
   "Environment": "dev",
-  "ReadinessScore": 75.0,
+  "ReadinessScore": 78.8,
   "ActionableItems": [
-    "Fix inventory.yaml syntax",
-    "Fix YAML syntax"
+    "Create bolt configuration"
   ]
 }

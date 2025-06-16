@@ -3,9 +3,9 @@
 output "cluster_info" {
   description = "K3s cluster information"
   value = {
-    name        = module.k3s_cluster.cluster_name
-    environment = local.environment
-    master_ip   = local.nodes["pi-master"].ip
+    name            = module.k3s_cluster.cluster_name
+    environment     = local.environment
+    master_ip       = local.nodes["pi-master"].ip
     kubeconfig_path = local_file.kubeconfig.filename
   }
 }
@@ -24,21 +24,21 @@ output "nodes" {
 output "service_urls" {
   description = "Service URLs for staging environment"
   value = {
-    nifi = module.data_platform.nifi_url
+    nifi    = module.data_platform.nifi_url
     grafana = module.monitoring.grafana_url
-    trino = module.data_platform.trino_url
-    vault = module.security.vault_url
-    minio = module.data_platform.minio_url
+    trino   = module.data_platform.trino_url
+    vault   = module.security.vault_url
+    minio   = module.data_platform.minio_url
   }
 }
 
 output "credentials" {
   description = "Service credentials (sensitive)"
-  sensitive = true
+  sensitive   = true
   value = {
-    postgres_password = random_password.postgres_password.result
-    nifi_admin_password = random_password.nifi_admin_password.result
-    vault_root_token = random_password.vault_token.result
+    postgres_password      = random_password.postgres_password.result
+    nifi_admin_password    = random_password.nifi_admin_password.result
+    vault_root_token       = random_password.vault_token.result
     grafana_admin_password = var.grafana_admin_password
   }
 }
@@ -46,32 +46,32 @@ output "credentials" {
 output "monitoring_endpoints" {
   description = "Monitoring and observability endpoints"
   value = {
-    prometheus = module.monitoring.prometheus_url
-    grafana = module.monitoring.grafana_url
-    alertmanager = module.monitoring.alertmanager_url
+    prometheus    = module.monitoring.prometheus_url
+    grafana       = module.monitoring.grafana_url
+    alertmanager  = module.monitoring.alertmanager_url
     elasticsearch = module.monitoring.elasticsearch_url
-    kibana = module.monitoring.kibana_url
+    kibana        = module.monitoring.kibana_url
   }
 }
 
 output "puppet_inventory" {
   description = "Generated Puppet inventory file path"
-  value = local_file.staging_inventory.filename
+  value       = local_file.staging_inventory.filename
 }
 
 output "secrets_file" {
   description = "Generated secrets file path"
-  value = local_sensitive_file.staging_secrets.filename
+  value       = local_sensitive_file.staging_secrets.filename
 }
 
 output "kubeconfig_command" {
   description = "Command to use the generated kubeconfig"
-  value = "export KUBECONFIG=${local_file.kubeconfig.filename}"
+  value       = "export KUBECONFIG=${local_file.kubeconfig.filename}"
 }
 
 output "deployment_commands" {
   description = "Commands to deploy staging environment"
-  value = <<-EOT
+  value       = <<-EOT
     Staging environment configured! Deployment commands:
     
     1. Export kubeconfig:

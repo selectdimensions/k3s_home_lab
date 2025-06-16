@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     null = {
       source  = "hashicorp/null"
@@ -33,7 +33,7 @@ locals {
       role = "worker"
     }
   }
-  
+
   master_ip = local.nodes["pi-master"].ip
   worker_nodes = {
     for name, node in local.nodes : name => node
@@ -44,9 +44,9 @@ locals {
 # Generate Ansible inventory
 resource "local_file" "ansible_inventory" {
   filename = "../ansible/inventory/hosts.yml"
-  content  = templatefile("${path.module}/templates/inventory.yml.tpl", {
-    nodes = local.nodes
-    ssh_user = var.ssh_user
+  content = templatefile("${path.module}/templates/inventory.yml.tpl", {
+    nodes        = local.nodes
+    ssh_user     = var.ssh_user
     ssh_key_path = var.ssh_key_path
   })
 }
@@ -54,11 +54,11 @@ resource "local_file" "ansible_inventory" {
 # Prepare nodes using Ansible
 resource "null_resource" "prepare_nodes" {
   depends_on = [local_file.ansible_inventory]
-  
+
   triggers = {
     always_run = timestamp()
   }
-  
+
   provisioner "local-exec" {
     command = "cd ../ansible && ansible-playbook -i inventory/hosts.yml playbooks/prepare-nodes.yml"
   }
@@ -67,7 +67,7 @@ resource "null_resource" "prepare_nodes" {
 # Install K3s
 resource "null_resource" "install_k3s" {
   depends_on = [null_resource.prepare_nodes]
-  
+
   provisioner "local-exec" {
     command = "cd ../ansible && ansible-playbook -i inventory/hosts.yml playbooks/install-k3s.yml"
   }
@@ -76,7 +76,7 @@ resource "null_resource" "install_k3s" {
 # Get kubeconfig
 resource "null_resource" "get_kubeconfig" {
   depends_on = [null_resource.install_k3s]
-  
+
   provisioner "local-exec" {
     command = <<-EOT
       mkdir -p ~/.kube
@@ -89,17 +89,17 @@ resource "null_resource" "get_kubeconfig" {
 # Deploy K8s resources
 module "k3s_cluster" {
   source = "./modules/k3s-cluster"
-  
+
   depends_on = [null_resource.get_kubeconfig]
-  
+
   metallb_ip_range = var.metallb_ip_range
 }
 
 module "data_platform" {
   source = "./modules/data-platform"
-  
+
   depends_on = [module.k3s_cluster]
-  
+
   postgres_password = var.postgres_password
   minio_access_key  = var.minio_access_key
   minio_secret_key  = var.minio_secret_key

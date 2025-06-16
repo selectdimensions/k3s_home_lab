@@ -1,0 +1,5 @@
+"grafana":
+  "adminPassword": "dev-admin-password-123"
+  "persistence":
+    "enabled": true
+    "size": "5Gi"

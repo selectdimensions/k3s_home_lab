@@ -7,7 +7,7 @@
 # Pi K3s Home Lab: Enterprise Data Platform
 
 > **Production-Ready Kubernetes Data Engineering Platform on Raspberry Pi**
-> 
+>
 > Complete Infrastructure-as-Code solution featuring NiFi, Trino, PostgreSQL, MinIO, and comprehensive monitoring - all running on ARM64 Raspberry Pi 5 hardware.
 
 ## 🚀 Quick Start
@@ -38,7 +38,7 @@ make quick-deploy
 git clone https://github.com/selectdimensions/k3s_home_lab.git
 cd k3s_home_lab
 
-# Copy and edit configuration  
+# Copy and edit configuration
 Copy-Item inventory.yaml.example inventory.yaml
 Copy-Item terraform\environments\prod\terraform.tfvars.example terraform\environments\prod\terraform.tfvars
 
@@ -86,7 +86,7 @@ This project implements a complete enterprise-grade data platform using Infrastr
 
 ### Core Data Stack
 - **🔄 Apache NiFi**: Visual data flow orchestration and ETL
-- **⚡ Trino**: Distributed SQL query engine for data analytics  
+- **⚡ Trino**: Distributed SQL query engine for data analytics
 - **🐘 PostgreSQL**: Relational database with optimizations for ARM64
 - **📦 MinIO**: S3-compatible object storage for data lake
 - **🐍 JupyterLab**: Interactive data science environment
@@ -106,7 +106,7 @@ This project implements a complete enterprise-grade data platform using Infrastr
 *Thinking...*
 
 > The user wants me to add this comprehensive requirements document to the "How It Works" document I just created. This is a detailed PRD (Product Requirements Document) for their Pi Cluster project. I should integrate this information into the existing document in a way that flows naturally and enhances the understanding of the project.
-> 
+>
 > I'll add this as a new section at the beginning of the document, as it provides the formal requirements and specifications that the rest of the document implements. This will give readers the complete context before diving into the technical implementation details.
 
 # How It Works: Pi Cluster Automation with Puppet and Terraform
@@ -142,14 +142,14 @@ This project implements a complete enterprise-grade data platform using Infrastr
 - Enable Python-based data analysis (e.g., JupyterLab, FastAPI microservices).
 - Monitor and visualize system and data health (Prometheus, Grafana, ELK).
 
-**User Stories**: 
-- As a data engineer, I want to run NiFi flows that write to PostgreSQL or MinIO. 
-- As a developer, I want to query different datasets via Trino and analyze them in Python. 
+**User Stories**:
+- As a data engineer, I want to run NiFi flows that write to PostgreSQL or MinIO.
+- As a developer, I want to query different datasets via Trino and analyze them in Python.
 - As a sysadmin, I want GitOps-style deployment via Flux CD and Terraform.
 
-**External System Interactions**: 
-- API access to public data (weather, finance) 
-- GitHub for version control 
+**External System Interactions**:
+- API access to public data (weather, finance)
+- GitHub for version control
 - Optional: cloud backup services
 
 ### ⚙️ 3. Hardware Requirements
@@ -336,7 +336,7 @@ The architecture directly addresses the PRD requirements:
   - Manages node certificates
   - Serves configurations to agents
   - Implements security policies from PRD section 6
-  
+
 - **Puppet Agents** (All nodes):
   - Pull configurations from Puppet Server
   - Apply system configurations
@@ -360,7 +360,7 @@ The architecture directly addresses the PRD requirements:
   - Controller Manager
   - etcd (embedded)
   - Hosts NiFi for data orchestration
-  
+
 - **Worker Nodes** (192.168.0.121-123):
   - Kubelet
   - Container runtime
@@ -786,47 +786,30 @@ mc mirror --overwrite backup-nas/minio/ minio/
 
 ## Why This Architecture Works
 
-1. **Meets All PRD Requirements**: 
+1. **Meets All PRD Requirements**:
    - Complete data engineering platform (NiFi, Trino, PostgreSQL, MinIO)
    - Full monitoring and observability
    - Security at all layers
    - GitOps-based deployment
 
-2. **Scalability**: 
+2. **Scalability**:
    - Easy to add more Pi nodes
    - Horizontal scaling for Trino and storage
    - Distributed workload management
 
-3. **Resilience**: 
+3. **Resilience**:
    - Multiple backup strategies (Velero, rsync)
    - Automated failover with K3s
    - Disaster recovery procedures
 
-4. **Cost-Effective**: 
+4. **Cost-Effective**:
    - Low power consumption (~20W per Pi)
    - No licensing costs (all open source)
    - Learn enterprise patterns at home
 
-5. **Educational Value**: 
+5. **Educational Value**:
    - Hands-on experience with modern DevOps
    - Real data engineering workflows
    - Production-like environment
 
-<<<<<<< HEAD
 This architecture provides a complete implementation of the PiClusterOps v1.0 requirements, delivering a professional-grade data engineering platform on Raspberry Pi hardware.
-=======
-## Benefits of Using Puppet
-
-1. **True Cross-Platform Support**: Native support for Windows, macOS, and Linux
-2. **Declarative Configuration**: Define desired state, Puppet handles implementation
-3. **Puppet Forge**: Extensive module ecosystem for common tasks
-4. **Bolt Orchestration**: Agentless task execution and plan orchestration
-5. **Enterprise Features**: Optional Puppet Enterprise for GUI, RBAC, and compliance
-6. **Hiera Data Management**: Separate configuration data from code
-7. **Strong Testing Framework**: RSpec-puppet for comprehensive testing
-8. **Mature Ecosystem**: Well-established tool with extensive documentation
-9. **Reporting & Compliance**: Built-in reporting and compliance features
-10. **Scale**: Efficiently manages thousands of nodes
-
-This structure provides a production-ready, cross-platform Pi cluster infrastructure management solution using Puppet.
->>>>>>> a8dc482af4fde2ddf4a4c269f597aee8747859da

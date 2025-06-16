@@ -319,7 +319,7 @@ function Start-NiFiPortForward {
     Write-Info "NiFi will be available at: http://localhost:8080"
     Write-Warning "Press Ctrl+C to stop port forwarding"
 
-    kubectl port-forward -n data-platform svc/nifi 8080:8080
+    kubectl port-forward -n data-engineering svc/nifi 8080:8080
 }
 
 function Start-GrafanaPortForward {
@@ -327,7 +327,7 @@ function Start-GrafanaPortForward {
     Write-Info "Grafana will be available at: http://localhost:3000"
     Write-Warning "Press Ctrl+C to stop port forwarding"
 
-    kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+    kubectl port-forward -n monitoring svc/grafana 3000:3000
 }
 
 function Get-ClusterStatus {

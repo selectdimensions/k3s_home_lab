@@ -9,10 +9,10 @@ resource "local_file" "bolt_inventory" {
     config = {
       transport = "ssh"
       ssh = {
-        user = var.ssh_user
-        "private-key" = var.ssh_key_path
+        user             = var.ssh_user
+        "private-key"    = var.ssh_key_path
         "host-key-check" = false
-        "run-as" = "root"
+        "run-as"         = "root"
       }
     }
     groups = [
@@ -23,12 +23,12 @@ resource "local_file" "bolt_inventory" {
             name = "masters"
             targets = [
               for name, node in var.nodes : {
-                uri = node.ip
-                name = name
+                uri   = node.ip
+                name  = name
                 alias = "${name}.${var.cluster_domain}"
                 vars = {
-                  role = node.role
-                  k3s_role = "server"
+                  role       = node.role
+                  k3s_role   = "server"
                   components = node.components
                 }
               } if node.role == "master"
@@ -41,12 +41,12 @@ resource "local_file" "bolt_inventory" {
             name = "workers"
             targets = [
               for name, node in var.nodes : {
-                uri = node.ip
-                name = name
+                uri   = node.ip
+                name  = name
                 alias = "${name}.${var.cluster_domain}"
                 vars = {
-                  role = node.role
-                  k3s_role = "agent"
+                  role       = node.role
+                  k3s_role   = "agent"
                   components = node.components
                 }
               } if node.role == "worker"
@@ -57,9 +57,9 @@ resource "local_file" "bolt_inventory" {
           }
         ]
         vars = {
-          cluster_name = var.cluster_name
+          cluster_name   = var.cluster_name
           cluster_domain = var.cluster_domain
-          environment = var.environment
+          environment    = var.environment
         }
       }
     ]
@@ -70,9 +70,9 @@ resource "local_file" "bolt_inventory" {
 resource "local_file" "puppet_environment_config" {
   filename = "${path.root}/puppet-env-${var.environment}.yaml"
   content = yamlencode({
-    environment = var.puppet_config.environment
-    cluster_name = var.cluster_name
+    environment     = var.puppet_config.environment
+    cluster_name    = var.cluster_name
     deploy_services = var.puppet_config.deploy_services
-    debug_mode = var.puppet_config.debug_mode
-    nodes = var.nodes  })
+    debug_mode      = var.puppet_config.debug_mode
+  nodes = var.nodes })
 }

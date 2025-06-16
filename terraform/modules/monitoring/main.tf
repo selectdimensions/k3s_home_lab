@@ -5,9 +5,9 @@
 resource "local_file" "monitoring_config" {
   filename = "${path.root}/monitoring-${var.environment}.yaml"
   content = yamlencode({
-    environment = var.environment
-    namespace   = var.namespace
-    components  = var.components
+    environment  = var.environment
+    namespace    = var.namespace
+    components   = var.components
     cluster_name = var.cluster_name
   })
 }
@@ -35,7 +35,7 @@ resource "local_file" "grafana_values" {
       adminPassword = var.components.grafana.admin_password
       persistence = {
         enabled = true
-        size = "5Gi"
+        size    = "5Gi"
       }
-    }  })
+  } })
 }

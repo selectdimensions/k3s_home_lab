@@ -1,184 +1,210 @@
 Folder PATH listing
-Volume serial number is 0C96-A3D2
-C:.
-|   .gitignore
-|   bolt.ps1
-|   Dockerfile
-|   inventory-simple.yaml
-|   inventory.yaml
-|   inventory.yaml.example
-|   Make.ps1
-|   Makefile
-|   NUL
-|   project-structure.txt
-|   Readme.md
-|   
-+---.github
+Volume serial number is
+C:\Users\Jenkins\Documents\k3s_home_lab
+
+|+---.github
+|   +---workflows
+|      |   backup-dr.yml
+|      |   ci-cd-main.yml
+|      |   dependency-updates.yml
+|      |   k8s-apps-cd.yml
+|      |   puppet-ci.yml
+|      |   release.yml
+|      |   security-scan.yml
+|      |   setup.yml
+|      |   terraform-ci.yml
+|      |   validation.yml
 |   |   dependabot.yml
-|   |   
-|   \---workflows
-|           backup-dr.yml
-|           ci-cd-main.yml
-|           dependency-updates.yml
-|           k8s-apps-cd.yml
-|           puppet-ci.yml
-|           release.yml
-|           security-scan.yml
-|           terraform-ci.yml
-|           validation.yml
-|           
-+---docs
+|+---.vscode
+|   |   extensions.json
+|   |   k3s_home_lab.code-workspace
+|   |   launch.json
+|   |   settings.json
+|   |   tasks.json
+|+---docs
+|   +---architecture
+|   +---puppet-guides
+|      |   cross-platform-setup.md
+|   +---runbooks
+|      |   node-failure-recovery.md
 |   |   DEVELOPMENT-SETUP.md
 |   |   PUPPET-SETUP-COMPLETION.md
 |   |   WINDOWS-SETUP.md
-|   |   
-|   +---architecture
-|   +---puppet-guides
-|   |       cross-platform-setup.md
-|   |       
-|   \---runbooks
-|           node-failure-recovery.md
-|           
-+---k8s
+|+---k8s
 |   +---applications
 |   +---base
-|   |   |   kustomization.yaml
-|   |   |   namespace.yaml
-|   |   |   
-|   |   +---monitoring
-|   |   +---networkpolicies
-|   |   \---rbac
+|      +---monitoring
+|      +---networkpolicies
+|      +---rbac
+|      |   kustomization.yaml
+|      |   namespace.yaml
 |   +---helm-values
-|   |       minio-values.yaml
-|   |       nifi-values.yaml
-|   |       postgresql-values.yaml
-|   |       trino-values.yaml
-|   |       
-|   \---overlays
-|       +---dev
-|       |       kustomization.yaml
-|       |       
-|       \---prod
-|               kustomization.yaml
-|               
-+---monitoring
+|      |   minio-values.yaml
+|      |   nifi-values.yaml
+|      |   postgresql-values.yaml
+|      |   trino-values.yaml
+|   +---overlays
+|      +---dev
+|         |   kustomization.yaml
+|      +---prod
+|         |   kustomization.yaml
+|+---monitoring
 |   +---alerts
-|   |       critical-alerts.yaml
-|   |       
-|   \---dashboards
-|           cluster-overview.json
-|           
-+---puppet
+|      |   critical-alerts.yaml
+|   +---dashboards
+|      |   cluster-overview.json
+|+---puppet
+|   +---data
+|      +---environments
+|      +---nodes
+|      |   common.yaml
+|   +---manifests
+|      |   site.pp
+|   +---plans
+|      |   deploy_simple.pp
+|      |   deploy.pp
+|      |   k3s_deploy.pp
+|      |   restore.pp
+|      |   setup_monitoring_backup.pp
+|   +---puppet
+|   +---site-modules
+|      +---pi_cluster
+|      +---profiles
+|         +---manifests
+|            +---base
+|               |   darwin.pp
+|               |   windows.pp
+|            |   base.pp
+|            |   k3s_agent.pp
+|            |   k3s_server.pp
+|      +---roles
+|         +---manifests
+|            |   pi_worker.pp
+|   +---spec
+|      +---classes
+|         +---profiles
+|            |   k3s_server_spec.rb
+|      |   spec_helper.rb
+|   +---tasks
+|      |   backup_cluster.json
+|      |   backup_cluster.sh
+|      |   check_k3s_prereqs.json
+|      |   check_k3s_prereqs.sh
+|      |   cluster_maintenance.json
+|      |   cluster_maintenance.sh
+|      |   cluster_overview.json
+|      |   cluster_overview.sh
+|      |   cluster_status.json
+|      |   cluster_status.sh
+|      |   deploy_data_stack.json
+|      |   deploy_data_stack.sh
+|      |   deploy_services.json
+|      |   deploy_services.sh
+|      |   health_check.json
+|      |   install_k3s_master.json
+|      |   install_k3s_master.sh
+|      |   install_k3s_worker.json
+|      |   install_k3s_worker.sh
+|      |   restore_cluster.json
+|      |   restore_cluster.sh
+|      |   setup_monitoring.json
+|      |   setup_monitoring.sh
 |   |   .rerun.json
 |   |   bolt-debug.log
 |   |   bolt-project.yaml
 |   |   hiera.yaml
 |   |   Puppetfile
-|   |   
-|   +---data
-|   |   |   common.yaml
-|   |   |   
-|   |   +---environments
-|   |   \---nodes
-|   +---manifests
-|   |       site.pp
-|   |       
-|   +---plans
-|   |       deploy.pp
-|   |       deploy_simple.pp
-|   |       restore.pp
-|   |       setup_monitoring_backup.pp
-|   |       
-|   +---puppet
-|   +---site-modules
-|   |   +---pi_cluster
-|   |   +---profiles
-|   |   |   \---manifests
-|   |   |       |   base.pp
-|   |   |       |   k3s_agent.pp
-|   |   |       |   k3s_server.pp
-|   |   |       |   
-|   |   |       \---base
-|   |   |               darwin.pp
-|   |   |               windows.pp
-|   |   |               
-|   |   \---roles
-|   |       \---manifests
-|   |               pi_worker.pp
-|   |               
-|   +---spec
-|   |   |   spec_helper.rb
-|   |   |   
-|   |   \---classes
-|   |       \---profiles
-|   |               k3s_server_spec.rb
-|   |               
-|   \---tasks
-|           backup_cluster.json
-|           backup_cluster.sh
-|           cluster_maintenance.json
-|           cluster_maintenance.sh
-|           cluster_overview.json
-|           cluster_overview.sh
-|           cluster_status.json
-|           cluster_status.sh
-|           deploy_data_stack.json
-|           deploy_data_stack.sh
-|           deploy_services.json
-|           deploy_services.sh
-|           health_check.json
-|           restore_cluster.json
-|           restore_cluster.sh
-|           setup_monitoring.json
-|           setup_monitoring.sh
-|           
-+---scripts
-|   |   bootstrap.sh
-|   |   prepare-sd-card.sh
-|   |   setup-from-scratch.sh
-|   |   
+|+---scripts
 |   +---backup
 |   +---disaster-recovery
-|   |   \---disaster-recovery
-|   |           restore-cluster.sh
-|   |           
-|   \---setup
-|           install-puppet-agent.ps1
-|           install-puppet-agent.sh
-|           prepare-pis.ps1
-|           setup-windows.ps1
-|           
-+---terraform
+|      +---disaster-recovery
+|         |   restore-cluster.sh
+|   +---setup
+|      |   install-puppet-agent.ps1
+|      |   install-puppet-agent.sh
+|      |   prepare-pis.ps1
+|      |   setup-windows.ps1
+|   |   bootstrap.sh
+|   |   deployment-readiness.ps1
+|   |   prepare-sd-card.sh
+|   |   setup-from-scratch.sh
+|   |   test-terraform.ps1
+|   |   validate-infrastructure.ps1
+|+---terraform
+|   +---environments
+|      +---dev
+|         +---.kube
+|         +---helm-values
+|         +---k8s-configs
+|         |   .terraform.lock.hcl
+|         |   main.tf
+|         |   outputs.tf
+|         |   terraform.tfvars
+|         |   terraform.tfvars.example
+|         |   variables.tf
+|      +---prod
+|         |   main.tf
+|         |   outputs.tf
+|         |   terraform.tfvars.example
+|         |   variables.tf
+|      +---staging
+|         |   main.tf
+|         |   outputs.tf
+|         |   terraform.tfvars.example
+|         |   variables.tf
+|   +---modules
+|      +---backup
+|         |   main.tf
+|      +---data-platform
+|         |   main-clean.tf
+|         |   main.tf
+|         |   outputs.tf
+|         |   variables.tf
+|      +---gitops
+|         |   main.tf
+|      +---k3s-cluster
+|         +---templates
+|            |   k3s-master.yaml.tpl
+|            |   k3s-worker.yaml.tpl
+|            |   kubeconfig.yaml.tpl
+|         |   main.tf
+|         |   outputs.tf
+|         |   variables.tf
+|      +---monitoring
+|         |   main.tf
+|         |   outputs.tf
+|         |   variables.tf
+|      +---puppet-infrastructure
+|         |   main.tf
+|         |   outputs.tf
+|         |   variables.tf
+|      +---security
+|         |   main.tf
+|   +---templates
+|      |   inventory.yaml.tpl
 |   |   backend.tf
 |   |   main.tf
 |   |   variables.tf
-|   |   
-|   +---environments
-|   |   +---dev
-|   |   +---prod
-|   |   |       main.tf
-|   |   |       outputs.tf
-|   |   |       terraform.tfvars.example
-|   |   |       variables.tf
-|   |   |       
-|   |   \---staging
-|   \---modules
-|       +---backup
-|       |       main.tf
-|       |       
-|       +---gitops
-|       |       main.tf
-|       |       
-|       +---k3s-cluster
-|       |       main.tf
-|       |       
-|       +---monitoring
-|       |       main.tf
-|       |       
-|       \---puppet-infrastructure
-|               main.tf
-|               
-\---tests
-    +---integration
-    +---puppet
-    \---terraform
+|+---tests
+|   +---integration
+|   +---puppet
+|   +---terraform
+||   .gitignore
+||   .rerun.json
+||   bolt-debug.log
+||   bolt.ps1
+||   CRITICAL-ISSUES-RESOLUTION.md
+||   deployment-readiness-prod-20250616-150924.json
+||   Dockerfile
+||   inventory-simple.yaml
+||   inventory.yaml
+||   inventory.yaml.example
+||   Make.ps1
+||   Makefile
+||   NUL
+||   PROJECT-STATUS.md
+||   project-structure.txt
+||   Readme.md
+||   show-project-tree.ps1
+||   Show-ProjectStructure.ps1
+||   VALIDATION-SUMMARY.md

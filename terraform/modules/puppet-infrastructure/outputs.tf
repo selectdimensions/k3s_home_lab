@@ -13,8 +13,8 @@ output "puppet_nodes" {
 output "cluster_config" {
   description = "Cluster configuration for Puppet"
   value = {
-    environment   = var.environment
-    cluster_name  = var.cluster_name
+    environment    = var.environment
+    cluster_name   = var.cluster_name
     cluster_domain = var.cluster_domain
   }
 }

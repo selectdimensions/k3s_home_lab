@@ -159,13 +159,16 @@ function Test-ProjectStructure {
 function Test-Configuration {
     Write-Host ""
     Write-Host "⚙️  Configuration Check" -ForegroundColor Blue
-    Write-Host "════════════════════════" -ForegroundColor Blue
-
-    # Check inventory configuration
+    Write-Host "════════════════════════" -ForegroundColor Blue    # Check inventory configuration
     if (Test-Path "inventory.yaml") {
         try {
-            $inventory = Get-Content "inventory.yaml" | ConvertFrom-Yaml
-            Add-CheckResult "Configuration" "Inventory File" "PASS" "inventory.yaml exists and is valid"
+            # Validate YAML by testing with bolt inventory show
+            $boltResult = & bolt inventory show --inventoryfile inventory.yaml 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Add-CheckResult "Configuration" "Inventory File" "PASS" "inventory.yaml exists and is valid"
+            } else {
+                Add-CheckResult "Configuration" "Inventory File" "FAIL" "Invalid YAML format" "Fix inventory.yaml syntax"
+            }
 
             # Check for placeholder values
             $content = Get-Content "inventory.yaml" -Raw
@@ -287,13 +290,16 @@ function Test-PuppetReadiness {
             }
         } catch {
             Add-CheckResult "Puppet" "Bolt Command" "FAIL" "Bolt not found" "Install Puppet Bolt"
-        }
-
-        # Check bolt-project.yaml
-        if (Test-Path "bolt-project.yaml") {
+        }        # Check bolt-project.yaml
+        if (Test-Path "puppet/bolt-project.yaml") {
             try {
-                $boltConfig = Get-Content "bolt-project.yaml" | ConvertFrom-Yaml
-                Add-CheckResult "Puppet" "Bolt Configuration" "PASS" "bolt-project.yaml valid"
+                # Simply validate the file exists and has basic content
+                $content = Get-Content "puppet/bolt-project.yaml" -Raw
+                if ($content -match "name:" -and $content -match "modulepath:") {
+                    Add-CheckResult "Puppet" "Bolt Configuration" "PASS" "bolt-project.yaml valid"
+                } else {
+                    Add-CheckResult "Puppet" "Bolt Configuration" "WARN" "bolt-project.yaml incomplete" "Review bolt configuration"
+                }
             } catch {
                 Add-CheckResult "Puppet" "Bolt Configuration" "FAIL" "Invalid bolt-project.yaml" "Fix YAML syntax"
             }

@@ -80,7 +80,7 @@ variable "vault_token" {
 variable "backup_schedule" {
   description = "Backup schedule in cron format"
   type        = string
-  default     = "0 2 * * *"  # Daily at 2 AM
+  default     = "0 2 * * *" # Daily at 2 AM
 }
 
 variable "backup_retention" {
@@ -98,7 +98,7 @@ variable "node_labels" {
 
 variable "node_taints" {
   description = "Taints to apply to nodes"
-  type        = map(list(object({
+  type = map(list(object({
     key    = string
     value  = string
     effect = string

@@ -5,9 +5,9 @@
 resource "local_file" "data_platform_config" {
   filename = "${path.root}/data-platform-${var.environment}.yaml"
   content = yamlencode({
-    environment = var.environment
-    namespace   = var.namespace
-    components  = var.components
+    environment  = var.environment
+    namespace    = var.namespace
+    components   = var.components
     cluster_name = var.cluster_name
   })
 }
@@ -18,10 +18,10 @@ resource "local_file" "nifi_values" {
   filename = "${path.root}/helm-values/nifi-${var.environment}.yaml"
   content = yamlencode({
     replicaCount = var.components.nifi.replicas
-    resources = var.components.nifi.resources
+    resources    = var.components.nifi.resources
     persistence = {
       enabled = true
-      size = "10Gi"
+      size    = "10Gi"
     }
   })
 }
@@ -31,11 +31,11 @@ resource "local_file" "trino_values" {
   filename = "${path.root}/helm-values/trino-${var.environment}.yaml"
   content = yamlencode({
     coordinator = {
-      replicas = var.components.trino.coordinator_replicas
+      replicas  = var.components.trino.coordinator_replicas
       resources = var.components.trino.resources
     }
     worker = {
-      replicas = var.components.trino.worker_replicas
+      replicas  = var.components.trino.worker_replicas
       resources = var.components.trino.resources
     }
   })
@@ -47,7 +47,7 @@ resource "local_file" "postgresql_values" {
   content = yamlencode({
     persistence = {
       enabled = true
-      size = var.components.postgresql.storage_size
+      size    = var.components.postgresql.storage_size
     }
     auth = {
       database = "dataplatform"
@@ -62,7 +62,7 @@ resource "local_file" "minio_values" {
     mode = "standalone"
     persistence = {
       enabled = true
-      size = "20Gi"
+      size    = "20Gi"
     }
   })
 }

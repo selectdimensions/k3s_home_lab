@@ -57,12 +57,12 @@ resource "helm_release" "vault" {
     yamlencode({
       server = {
         dev = {
-          enabled = true
+          enabled      = true
           devRootToken = var.vault_token
         }
         standalone = {
           enabled = true
-          config = <<EOF
+          config  = <<EOF
 ui = true
 listener "tcp" {
   tls_disable = 1
@@ -76,22 +76,22 @@ EOF
         }
         dataStorage = {
           enabled = true
-          size = "10Gi"
+          size    = "10Gi"
         }
         nodeSelector = {
           "node-role.kubernetes.io/control-plane" = "true"
         }
         tolerations = [{
-          key = "node-role.kubernetes.io/control-plane"
+          key      = "node-role.kubernetes.io/control-plane"
           operator = "Exists"
-          effect = "NoSchedule"
+          effect   = "NoSchedule"
         }]
       }
       ui = {
-        enabled = true
-        serviceType = "LoadBalancer"
+        enabled         = true
+        serviceType     = "LoadBalancer"
         serviceNodePort = null
-        externalPort = 8200
+        externalPort    = 8200
       }
       injector = {
         enabled = true
@@ -224,9 +224,9 @@ resource "kubernetes_network_policy" "allow_dns" {
 
   spec {
     pod_selector {}
-    
+
     policy_types = ["Egress"]
-    
+
     egress {
       to {
         namespace_selector {
@@ -235,7 +235,7 @@ resource "kubernetes_network_policy" "allow_dns" {
           }
         }
       }
-      
+
       ports {
         protocol = "UDP"
         port     = "53"
@@ -253,9 +253,9 @@ resource "kubernetes_network_policy" "data_platform_internal" {
 
   spec {
     pod_selector {}
-    
+
     policy_types = ["Ingress", "Egress"]
-    
+
     ingress {
       from {
         namespace_selector {
@@ -265,7 +265,7 @@ resource "kubernetes_network_policy" "data_platform_internal" {
         }
       }
     }
-    
+
     egress {
       to {
         namespace_selector {
@@ -275,7 +275,7 @@ resource "kubernetes_network_policy" "data_platform_internal" {
         }
       }
     }
-    
+
     # Allow egress to security namespace for Vault
     egress {
       to {
@@ -286,7 +286,7 @@ resource "kubernetes_network_policy" "data_platform_internal" {
         }
       }
     }
-    
+
     # Allow DNS
     egress {
       to {
@@ -296,7 +296,7 @@ resource "kubernetes_network_policy" "data_platform_internal" {
           }
         }
       }
-      
+
       ports {
         protocol = "UDP"
         port     = "53"
@@ -314,9 +314,9 @@ resource "kubernetes_network_policy" "monitoring_access" {
 
   spec {
     pod_selector {}
-    
+
     policy_types = ["Egress"]
-    
+
     # Allow monitoring to scrape all namespaces
     egress {
       to {}
@@ -337,35 +337,35 @@ resource "kubernetes_network_policy" "allow_loadbalancer" {
         "app.kubernetes.io/component" = "server"
       }
     }
-    
+
     policy_types = ["Ingress"]
-    
+
     ingress {
       from {}
-      
+
       ports {
         protocol = "TCP"
-        port     = "8443"  # NiFi
+        port     = "8443" # NiFi
       }
-      
+
       ports {
         protocol = "TCP"
-        port     = "8080"  # Trino
+        port     = "8080" # Trino
       }
-      
+
       ports {
         protocol = "TCP"
-        port     = "9000"  # MinIO API
+        port     = "9000" # MinIO API
       }
-      
+
       ports {
         protocol = "TCP"
-        port     = "9001"  # MinIO Console
+        port     = "9001" # MinIO Console
       }
-      
+
       ports {
         protocol = "TCP"
-        port     = "8888"  # JupyterLab
+        port     = "8888" # JupyterLab
       }
     }
   }

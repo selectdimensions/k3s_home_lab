@@ -45,8 +45,8 @@ locals {
     cluster_dns  = var.cluster_dns
 
     # Node configuration
-    master_nodes = [for name, node in var.nodes : merge(node, {name = name}) if node.role == "master"]
-    worker_nodes = [for name, node in var.nodes : merge(node, {name = name}) if node.role == "worker"]
+    master_nodes = [for name, node in var.nodes : merge(node, { name = name }) if node.role == "master"]
+    worker_nodes = [for name, node in var.nodes : merge(node, { name = name }) if node.role == "worker"]
   }
 }
 
@@ -55,18 +55,18 @@ resource "local_file" "k3s_config" {
   for_each = var.nodes
 
   content = templatefile("${path.module}/templates/k3s-${each.value.role}.yaml.tpl", {
-    cluster_name   = local.cluster_config.cluster_name
-    k3s_token     = local.cluster_config.k3s_token
-    master_ip     = local.cluster_config.master_nodes[0].ip
-    cluster_cidr  = local.cluster_config.cluster_cidr
-    service_cidr  = local.cluster_config.service_cidr
-    cluster_dns   = local.cluster_config.cluster_dns
-    node_name     = each.key
-    node_ip       = each.value.ip
+    cluster_name       = local.cluster_config.cluster_name
+    k3s_token          = local.cluster_config.k3s_token
+    master_ip          = local.cluster_config.master_nodes[0].ip
+    cluster_cidr       = local.cluster_config.cluster_cidr
+    service_cidr       = local.cluster_config.service_cidr
+    cluster_dns        = local.cluster_config.cluster_dns
+    node_name          = each.key
+    node_ip            = each.value.ip
     disable_components = join(",", var.disable_components)
   })
 
-  filename = "${path.root}/.k3s-config/${each.key}-${each.value.role}.yaml"
+  filename        = "${path.root}/.k3s-config/${each.key}-${each.value.role}.yaml"
   file_permission = "0600"
 }
 
@@ -80,8 +80,8 @@ resource "local_file" "metallb_helm_values" {
     speaker = {
       tolerations = [
         {
-          effect = "NoSchedule"
-          key = "node-role.kubernetes.io/master"
+          effect   = "NoSchedule"
+          key      = "node-role.kubernetes.io/master"
           operator = "Exists"
         }
       ]
@@ -95,7 +95,7 @@ resource "local_file" "namespace_configs" {
   filename = "${path.root}/k8s-configs/namespace-${each.value}.yaml"
   content = yamlencode({
     apiVersion = "v1"
-    kind = "Namespace"
+    kind       = "Namespace"
     metadata = {
       name = each.value
     }
@@ -108,13 +108,13 @@ resource "local_file" "namespace_configs" {
 # Create directory for k8s configurations
 resource "local_file" "k8s_config_dir" {
   filename = "${path.root}/k8s-configs/.gitkeep"
-  content = ""
+  content  = ""
 }
 
 # Generate MetalLB IP Pool configuration
 resource "local_file" "metallb_ippool_config" {
   depends_on = [local_file.metallb_helm_values, local_file.k8s_config_dir]
-  filename = "${path.root}/k8s-configs/metallb-ippool.yaml"
+  filename   = "${path.root}/k8s-configs/metallb-ippool.yaml"
   content = yamlencode({
     apiVersion = "metallb.io/v1beta1"
     kind       = "IPAddressPool"
@@ -131,7 +131,7 @@ resource "local_file" "metallb_ippool_config" {
 # Generate MetalLB L2Advertisement configuration
 resource "local_file" "metallb_l2_config" {
   depends_on = [local_file.metallb_ippool_config]
-  filename = "${path.root}/k8s-configs/metallb-l2.yaml"
+  filename   = "${path.root}/k8s-configs/metallb-l2.yaml"
   content = yamlencode({
     apiVersion = "metallb.io/v1beta1"
     kind       = "L2Advertisement"

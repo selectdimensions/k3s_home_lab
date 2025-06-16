@@ -9,8 +9,8 @@ resource "helm_release" "velero" {
   values = [
     templatefile("${path.module}/values/velero.yaml", {
       backup_storage_location = var.backup_storage_location
-      minio_access_key       = var.minio_access_key
-      minio_secret_key       = var.minio_secret_key
+      minio_access_key        = var.minio_access_key
+      minio_secret_key        = var.minio_secret_key
     })
   ]
 }
@@ -29,9 +29,9 @@ resource "kubernetes_manifest" "backup_schedules" {
     spec = {
       schedule = each.value.schedule
       template = {
-        ttl = each.value.retention
-        includedNamespaces = each.value.namespaces
-        storageLocation = var.backup_storage_location
+        ttl                     = each.value.retention
+        includedNamespaces      = each.value.namespaces
+        storageLocation         = var.backup_storage_location
         volumeSnapshotLocations = ["default"]
       }
     }

@@ -49,8 +49,8 @@ variable "components" {
   description = "Data platform components configuration"
   type = object({
     nifi = object({
-      enabled   = bool
-      replicas  = number
+      enabled  = bool
+      replicas = number
       resources = object({
         requests = map(string)
         limits   = map(string)
@@ -75,8 +75,8 @@ variable "components" {
   })
   default = {
     nifi = {
-      enabled   = true
-      replicas  = 1
+      enabled  = true
+      replicas = 1
       resources = {
         requests = { cpu = "500m", memory = "1Gi" }
         limits   = { cpu = "1", memory = "2Gi" }

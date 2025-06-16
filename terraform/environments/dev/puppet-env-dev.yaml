@@ -1,0 +1,21 @@
+"cluster_name": "pi-k3s-dev"
+"debug_mode": true
+"deploy_services":
+- "base"
+- "k3s"
+- "minimal-monitoring"
+"environment": "development"
+"nodes":
+  "pi-master":
+    "components":
+    - "puppet-server"
+    - "k3s-server"
+    - "nifi"
+    "ip": "192.168.0.120"
+    "role": "master"
+  "pi-worker-1":
+    "components":
+    - "k3s-agent"
+    - "trino"
+    "ip": "192.168.0.121"
+    "role": "worker"

@@ -1,1 +1,1 @@
-[{"target":"pi-master","status":"success"}]
+[{"target":"pi-master","status":"success"},{"target":"pi-worker-1","status":"success"},{"target":"pi-worker-2","status":"success"},{"target":"pi-worker-3","status":"success"}]

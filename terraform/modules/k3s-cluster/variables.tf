@@ -27,8 +27,8 @@ variable "k3s_token" {
 variable "nodes" {
   description = "Map of cluster nodes with their configuration"
   type = map(object({
-    ip   = string
-    role = string
+    ip     = string
+    role   = string
     labels = optional(map(string), {})
     taints = optional(list(string), [])
   }))

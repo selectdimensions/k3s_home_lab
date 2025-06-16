@@ -1,0 +1,15 @@
+"cluster_name": "pi-k3s"
+"components":
+  "alertmanager":
+    "enabled": false
+  "grafana":
+    "admin_password": "dev-admin-password-123"
+    "enabled": true
+  "node_exporter":
+    "enabled": true
+  "prometheus":
+    "enabled": true
+    "retention": "7d"
+    "storage_size": "5Gi"
+"environment": "dev"
+"namespace": "monitoring-dev"
