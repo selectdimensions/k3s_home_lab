@@ -1,0 +1,26 @@
+{
+  "description": "Deploy data engineering stack (NiFi, Trino, PostgreSQL, MinIO)",
+  "input_method": "stdin",
+  "parameters": {
+    "components": {
+      "description": "Components to deploy (nifi, trino, postgresql, minio, all)",
+      "type": "Optional[String]",
+      "default": "all"
+    },
+    "namespace": {
+      "description": "Kubernetes namespace for data engineering stack",
+      "type": "Optional[String]",
+      "default": "data-engineering"
+    },
+    "storage_class": {
+      "description": "Storage class for persistent volumes",
+      "type": "Optional[String]",
+      "default": "local-path"
+    },
+    "data_size": {
+      "description": "Size of data volumes (e.g., 10Gi, 50Gi)",
+      "type": "Optional[String]",
+      "default": "20Gi"
+    }
+  }
+}

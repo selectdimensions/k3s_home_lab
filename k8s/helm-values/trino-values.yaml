@@ -1,0 +1,139 @@
+# Trino Helm Chart Values
+# Reference: https://artifacthub.io/packages/helm/trino/trino
+
+image:
+  repository: trinodb/trino
+  tag: "432"
+  pullPolicy: IfNotPresent
+
+server:
+  workers: 2
+  node:
+    environment: production
+    dataDir: /data/trino
+    pluginDir: /usr/lib/trino/plugin
+
+coordinator:
+  jvm:
+    maxHeapSize: "2G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  config:
+    general:
+      http-server.http.port: 8080
+      query.max-memory: "2GB"
+      query.max-memory-per-node: "1GB"
+      query.max-total-memory-per-node: "1.5GB"
+      discovery-server.enabled: true
+      discovery.uri: "http://localhost:8080"
+
+  additionalExposedPorts:
+    - name: http
+      port: 8080
+      protocol: TCP
+
+worker:
+  jvm:
+    maxHeapSize: "2G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  config:
+    general:
+      http-server.http.port: 8080
+      query.max-memory: "1GB"
+      query.max-memory-per-node: "1GB"
+      query.max-total-memory-per-node: "1.5GB"
+
+# Catalogs configuration
+catalogs:
+  postgresql.properties: |
+    connector.name=postgresql
+    connection-url=jdbc:postgresql://postgresql:5432/trino
+    connection-user=trino
+    connection-password=${ENV:POSTGRES_PASSWORD}
+
+  minio.properties: |
+    connector.name=hive-hadoop2
+    hive.metastore.uri=thrift://hive-metastore:9083
+    hive.s3.endpoint=http://minio:9000
+    hive.s3.aws-access-key=${ENV:MINIO_ACCESS_KEY}
+    hive.s3.aws-secret-key=${ENV:MINIO_SECRET_KEY}
+    hive.s3.path-style-access=true
+    hive.s3.ssl.enabled=false
+    hive.s3.max-connections=100
+
+  memory.properties: |
+    connector.name=memory
+    memory.max-data-per-node=128MB
+
+# Service configuration
+service:
+  type: LoadBalancer
+  port: 8080
+
+# Ingress configuration
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: trino.cluster.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Resource configuration
+resources:
+  coordinator:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+  worker:
+    limits:
+      cpu: 1500m
+      memory: 3Gi
+    requests:
+      cpu: 750m
+      memory: 1.5Gi
+
+# Node selector for Raspberry Pi
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+# Tolerations for Pi-specific taints
+tolerations:
+  - key: "arm"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+# Security configuration
+auth:
+  refreshPeriod: "1s"
+  groups: "read-only,admin"
+
+# Environment variables
+env:
+  - name: POSTGRES_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: postgres-credentials
+        key: password
+  - name: MINIO_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: minio-credentials
+        key: access-key
+  - name: MINIO_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: minio-credentials
+        key: secret-key

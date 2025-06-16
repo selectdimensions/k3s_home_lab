@@ -40,8 +40,7 @@ function Show-Help {
     Write-Host "=============================================" -ForegroundColor Blue
     Write-Host ""
     Write-Host "Available Commands:" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "  help                    Show this help message"
+    Write-Host ""    Write-Host "  help                    Show this help message"
     Write-Host "  init                    Initialize the project"
     Write-Host "  validate                Validate configurations"
     Write-Host "  plan                    Plan infrastructure changes"
@@ -49,6 +48,14 @@ function Show-Help {
     Write-Host "  destroy                 Destroy infrastructure"
     Write-Host "  puppet-deploy           Deploy using Puppet Bolt"
     Write-Host "  puppet-test             Run Puppet tests"
+    Write-Host "  backup                  Backup cluster state"
+    Write-Host "  restore                 Restore cluster from backup"
+    Write-Host "  setup-monitoring        Deploy monitoring stack (Prometheus, Grafana)"
+    Write-Host "  deploy-data-stack       Deploy data engineering stack (NiFi, Trino, etc.)"
+    Write-Host "  maintenance             Perform cluster maintenance operations"
+    Write-Host "  setup-full              Setup monitoring and backup procedures"
+    Write-Host "  cluster-status          Check cluster health status"
+    Write-Host "  cluster-overview        Get comprehensive cluster overview"
     Write-Host "  puppet-facts            Gather facts from all nodes"
     Write-Host "  puppet-apply            Apply Puppet configuration to specific nodes"
     Write-Host "  test                    Run integration tests"
@@ -307,7 +314,13 @@ function Start-GrafanaPortForward {
 function Get-ClusterStatus {
     Write-Step "Checking cluster status..."
     
-    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::cluster_status" -targets "masters" -inventory "inventory.yaml"
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::cluster_status" -targets "masters" -inventory "../inventory.yaml"
+}
+
+function Get-ClusterOverview {
+    Write-Step "Getting comprehensive cluster overview..."
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::cluster_overview" -targets "pi-master" -inventory "../inventory.yaml"
 }
 
 function Get-NodeShell {
@@ -333,6 +346,81 @@ function Invoke-IntegrationTests {
     Write-Step "Integration tests complete!"
 }
 
+function Install-Monitoring {
+    Write-Step "Setting up monitoring stack..."
+    
+    $params = @{
+        stack_components = "all"
+        namespace = "monitoring"
+        persistent_storage = $true
+        retention_days = 15
+    }
+    $paramsJson = $params | ConvertTo-Json -Compress
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::setup_monitoring --params '$paramsJson'" -targets "pi-master" -inventory "../inventory.yaml"
+}
+
+function Backup-Cluster {
+    Write-Step "Backing up cluster..."
+    
+    $params = @{
+        backup_type = "full"
+        backup_location = "/opt/backups"
+        retention_days = 7
+    }
+    $paramsJson = $params | ConvertTo-Json -Compress
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::backup_cluster --params '$paramsJson'" -targets "pi-master" -inventory "../inventory.yaml"
+}
+
+function Restore-Cluster {
+    param([string]$BackupPath)
+    
+    if (-not $BackupPath) {
+        Write-Error "Please specify backup path with -BackupPath parameter"
+        return
+    }
+    
+    Write-Step "Restoring cluster from backup: $BackupPath"
+    Write-Warning "This will overwrite current cluster state!"
+    
+    $confirm = Read-Host "Continue? (y/N)"
+    if ($confirm -ne "y" -and $confirm -ne "Y") {
+        Write-Info "Restore cancelled"
+        return
+    }
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::restore_cluster backup_path=$BackupPath force=true" -targets "masters" -inventory "../inventory.yaml"
+}
+
+function Install-DataStack {
+    Write-Step "Deploying data engineering stack..."
+    
+    $params = @{
+        components = "all"
+        namespace = "data-engineering"
+        storage_class = "local-path"
+        data_size = "20Gi"
+    }
+    $paramsJson = $params | ConvertTo-Json -Compress
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::deploy_data_stack --params '$paramsJson'" -targets "pi-master" -inventory "../inventory.yaml"
+}
+
+function Start-Maintenance {
+    param([string]$Operation = "all")
+    
+    Write-Step "Performing cluster maintenance: $Operation"
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::cluster_maintenance operation=$Operation force=false" -targets $Targets -inventory "../inventory.yaml"
+}
+
+function Install-MonitoringAndBackup {
+    Write-Step "Setting up comprehensive monitoring and backup procedures..."
+    
+    & "$PSScriptRoot\bolt.ps1" -cmd "plan run pi_cluster_automation::setup_monitoring_backup setup_monitoring=true setup_backup=true" -targets "all" -inventory "../inventory.yaml"
+}
+
 # Main command dispatcher
 switch ($Command.ToLower()) {
     "help" { Show-Help }
@@ -346,12 +434,16 @@ switch ($Command.ToLower()) {
     "puppet-facts" { Get-PuppetFacts }
     "puppet-apply" { Invoke-PuppetApply }
     "test" { Invoke-IntegrationTests }
-    "backup" { Invoke-Backup }
-    "restore" { Invoke-Restore }
+    "backup" { Backup-Cluster }
+    "restore" { Restore-Cluster -BackupPath $BackupName }
+    "setup-monitoring" { Install-Monitoring }
+    "deploy-data-stack" { Install-DataStack }
+    "maintenance" { Start-Maintenance -Operation $Environment }
+    "setup-full" { Install-MonitoringAndBackup }
     "kubeconfig" { Get-Kubeconfig }
     "nifi-ui" { Start-NiFiPortForward }
-    "grafana-ui" { Start-GrafanaPortForward }
-    "cluster-status" { Get-ClusterStatus }
+    "grafana-ui" { Start-GrafanaPortForward }    "cluster-status" { Get-ClusterStatus }
+    "cluster-overview" { Get-ClusterOverview }
     "node-shell" { Get-NodeShell }
     default {
         Write-Error "Unknown command: $Command"

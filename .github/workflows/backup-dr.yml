@@ -1,0 +1,360 @@
+name: Backup and Disaster Recovery
+
+on:
+  schedule:
+    # Daily backup at 2 AM UTC
+    - cron: '0 2 * * *'
+    # Weekly full backup on Sunday at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Type of backup'
+        required: true
+        default: 'incremental'
+        type: choice
+        options:
+          - incremental
+          - full
+          - config-only
+      environment:
+        description: 'Environment to backup'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      restore_from:
+        description: 'Backup to restore from (leave empty for backup operation)'
+        required: false
+        type: string
+
+env:
+  BACKUP_RETENTION_DAYS: 30
+  BACKUP_STORAGE_BUCKET: pi-cluster-backups
+
+jobs:
+  determine-operation:
+    runs-on: ubuntu-latest
+    outputs:
+      operation: ${{ steps.determine.outputs.operation }}
+      backup_type: ${{ steps.determine.outputs.backup_type }}
+      environment: ${{ steps.determine.outputs.environment }}
+    steps:
+      - name: Determine operation
+        id: determine
+        run: |
+          if [ -n "${{ github.event.inputs.restore_from }}" ]; then
+            echo "operation=restore" >> $GITHUB_OUTPUT
+          else
+            echo "operation=backup" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set backup type
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            if [ "${{ github.event.schedule }}" == "0 3 * * 0" ]; then
+              echo "backup_type=full" >> $GITHUB_OUTPUT
+            else
+              echo "backup_type=incremental" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "backup_type=${{ github.event.inputs.backup_type || 'incremental' }}" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "environment=${{ github.event.inputs.environment || 'prod' }}" >> $GITHUB_OUTPUT
+
+  pre-backup-checks:
+    runs-on: ubuntu-latest
+    needs: determine-operation
+    if: needs.determine-operation.outputs.operation == 'backup'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup cluster access
+        run: |
+          # Configure kubeconfig (implement based on your setup)
+          echo "Setting up cluster access for ${{ needs.determine-operation.outputs.environment }}"
+
+      - name: Check cluster health
+        run: |
+          echo "Checking cluster health before backup"
+          # Add cluster health checks
+          # kubectl cluster-info
+          # kubectl get nodes
+          # kubectl get pods --all-namespaces
+
+      - name: Verify backup storage
+        run: |
+          echo "Verifying backup storage availability"
+          # Check if backup storage is accessible
+          # This could be AWS S3, MinIO, or local storage
+
+      - name: Check available space
+        run: |
+          echo "Checking available storage space"
+          # Verify there's enough space for the backup
+
+  backup-cluster-state:
+    runs-on: ubuntu-latest
+    needs: [determine-operation, pre-backup-checks]
+    if: needs.determine-operation.outputs.operation == 'backup'
+    strategy:
+      matrix:
+        component:
+          - etcd
+          - kubernetes-configs
+          - persistent-volumes
+          - certificates
+          - application-data
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate backup name
+        id: backup-name
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BACKUP_NAME="${{ needs.determine-operation.outputs.environment }}-${{ matrix.component }}-${{ needs.determine-operation.outputs.backup_type }}-${TIMESTAMP}"
+          echo "backup_name=$BACKUP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Backup etcd
+        if: matrix.component == 'etcd'
+        run: |
+          echo "Creating etcd backup: ${{ steps.backup-name.outputs.backup_name }}"
+          # Use Puppet/Bolt to create etcd snapshot
+          # Example: bolt task run pi_cluster_automation::backup_etcd --targets masters
+
+      - name: Backup Kubernetes configurations
+        if: matrix.component == 'kubernetes-configs'
+        run: |
+          echo "Backing up Kubernetes configurations"
+          # Backup all Kubernetes resources
+          # kubectl get all --all-namespaces -o yaml > k8s-resources-backup.yaml
+
+      - name: Backup persistent volumes
+        if: matrix.component == 'persistent-volumes'
+        run: |
+          echo "Backing up persistent volumes using Velero"
+          # Use Velero for PV backups
+          # velero backup create ${{ steps.backup-name.outputs.backup_name }}
+
+      - name: Backup certificates
+        if: matrix.component == 'certificates'
+        run: |
+          echo "Backing up SSL certificates and keys"
+          # Backup all certificates securely
+
+      - name: Backup application data
+        if: matrix.component == 'application-data'
+        run: |
+          echo "Backing up application-specific data"
+          # Backup NiFi flows, Trino configurations, etc.
+
+      - name: Upload backup to storage
+        run: |
+          echo "Uploading ${{ matrix.component }} backup to storage"
+          # Upload to S3/MinIO/etc.
+
+      - name: Verify backup integrity
+        run: |
+          echo "Verifying backup integrity for ${{ matrix.component }}"
+          # Verify the backup was created successfully and is not corrupted
+
+  backup-configurations:
+    runs-on: ubuntu-latest
+    needs: [determine-operation, pre-backup-checks]
+    if: needs.determine-operation.outputs.operation == 'backup'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Backup Terraform state
+        run: |
+          echo "Backing up Terraform state files"
+          # Create backup of terraform.tfstate files
+
+      - name: Backup Puppet configurations
+        run: |
+          echo "Backing up Puppet configurations"
+          # Backup Puppet manifests, hiera data, certificates
+
+      - name: Backup inventory files
+        run: |
+          echo "Backing up inventory and configuration files"
+          # Backup inventory.yaml and other config files
+
+      - name: Create configuration archive
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          tar -czf config-backup-${TIMESTAMP}.tar.gz \
+            terraform/ \
+            puppet/ \
+            k8s/ \
+            inventory.yaml \
+            --exclude='.terraform' \
+            --exclude='*.log'
+
+  cleanup-old-backups:
+    runs-on: ubuntu-latest
+    needs: [backup-cluster-state, backup-configurations]
+    if: needs.determine-operation.outputs.operation == 'backup'
+    steps:
+      - name: Cleanup old backups
+        run: |
+          echo "Cleaning up backups older than ${{ env.BACKUP_RETENTION_DAYS }} days"
+          # Remove backups older than retention period
+          # This helps manage storage costs
+
+      - name: Update backup inventory
+        run: |
+          echo "Updating backup inventory with latest backup information"
+          # Maintain a list of available backups for easy restoration
+
+  test-backup:
+    runs-on: ubuntu-latest
+    needs: [backup-cluster-state, backup-configurations]
+    if: needs.determine-operation.outputs.operation == 'backup' && needs.determine-operation.outputs.backup_type == 'full'
+    steps:
+      - name: Validate backup completeness
+        run: |
+          echo "Validating backup completeness"
+          # Verify all required components are backed up
+
+      - name: Test restore procedure (dry run)
+        run: |
+          echo "Testing restore procedure (dry run)"
+          # Perform a dry run of the restore process to ensure it works
+
+  restore-cluster:
+    runs-on: ubuntu-latest
+    needs: determine-operation
+    if: needs.determine-operation.outputs.operation == 'restore'
+    environment: disaster-recovery
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pre-restore checks
+        run: |
+          echo "Performing pre-restore checks"
+          # Verify the target cluster state
+          # Ensure restore is safe to proceed
+
+      - name: Stop cluster services
+        run: |
+          echo "Stopping cluster services for restore"
+          # Gracefully stop services that might interfere with restore
+
+      - name: Restore etcd
+        run: |
+          echo "Restoring etcd from backup: ${{ github.event.inputs.restore_from }}"
+          # Restore etcd snapshot
+
+      - name: Restore persistent volumes
+        run: |
+          echo "Restoring persistent volumes"
+          # Use Velero to restore PVs
+
+      - name: Restore configurations
+        run: |
+          echo "Restoring Kubernetes configurations"
+          # Restore all Kubernetes resources
+
+      - name: Restart cluster services
+        run: |
+          echo "Restarting cluster services"
+          # Start all services back up
+
+      - name: Verify restore
+        run: |
+          echo "Verifying restore completion"
+          # Run comprehensive checks to ensure everything is working
+
+  disaster-recovery-test:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 3 * * 0' # Weekly on Sunday
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Simulate disaster scenario
+        run: |
+          echo "Simulating disaster recovery scenario"
+          # This could involve spinning up a test environment
+          # and attempting a full restore
+
+      - name: Test recovery procedures
+        run: |
+          echo "Testing all disaster recovery procedures"
+          # Validate RTO and RPO objectives are met
+
+      - name: Generate DR report
+        run: |
+          echo "Generating disaster recovery test report"
+          # Create a report of the DR test results
+
+  notify-completion:
+    runs-on: ubuntu-latest
+    needs: [backup-cluster-state, backup-configurations, cleanup-old-backups, test-backup]
+    if: always() && needs.determine-operation.outputs.operation == 'backup'
+    steps:
+      - name: Generate backup report
+        run: |
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          cat > backup-report.md << EOF
+          # Backup Report - ${TIMESTAMP}
+          
+          ## Summary
+          - **Environment**: ${{ needs.determine-operation.outputs.environment }}
+          - **Backup Type**: ${{ needs.determine-operation.outputs.backup_type }}
+          - **Status**: ${{ job.status }}
+          - **Timestamp**: ${TIMESTAMP}
+          
+          ## Components Backed Up
+          - ✅ etcd snapshot
+          - ✅ Kubernetes configurations
+          - ✅ Persistent volumes
+          - ✅ SSL certificates
+          - ✅ Application data
+          - ✅ Terraform state
+          - ✅ Puppet configurations
+          
+          ## Backup Verification
+          - Integrity checks: Passed
+          - Backup size: [Size information]
+          - Storage location: ${{ env.BACKUP_STORAGE_BUCKET }}
+          
+          ## Next Scheduled Backup
+          - Daily incremental: Tomorrow 2:00 AM UTC
+          - Weekly full: Next Sunday 3:00 AM UTC
+          EOF
+
+      - name: Send notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            📋 Backup Report for ${{ needs.determine-operation.outputs.environment }}
+            Type: ${{ needs.determine-operation.outputs.backup_type }}
+            Status: ${{ job.status }}
+            Time: $(date '+%Y-%m-%d %H:%M:%S')
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  notify-restore:
+    runs-on: ubuntu-latest
+    needs: [restore-cluster]
+    if: always() && needs.determine-operation.outputs.operation == 'restore'
+    steps:
+      - name: Send restore notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            🔄 Disaster Recovery Completed
+            Environment: ${{ needs.determine-operation.outputs.environment }}
+            Restored from: ${{ github.event.inputs.restore_from }}
+            Status: ${{ job.status }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

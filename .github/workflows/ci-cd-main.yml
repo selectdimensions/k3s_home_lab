@@ -1,0 +1,416 @@
+name: CI/CD Main Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      force_deploy:
+        description: 'Force deployment even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  TERRAFORM_VERSION: '1.6.6'
+  KUBECTL_VERSION: '1.29.0'
+  HELM_VERSION: '3.14.0'
+  PUPPET_VERSION: '8.4.0'
+  PDK_VERSION: '3.0.1'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  # Detect changes to determine what to build/test
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.changes.outputs.terraform }}
+      puppet: ${{ steps.changes.outputs.puppet }}
+      k8s: ${{ steps.changes.outputs.k8s }}
+      scripts: ${{ steps.changes.outputs.scripts }}
+      docs: ${{ steps.changes.outputs.docs }}
+      ci: ${{ steps.changes.outputs.ci }}
+      any: ${{ steps.changes.outputs.terraform == 'true' || steps.changes.outputs.puppet == 'true' || steps.changes.outputs.k8s == 'true' || steps.changes.outputs.scripts == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+            puppet:
+              - 'puppet/**'
+            k8s:
+              - 'k8s/**'
+              - 'monitoring/**'
+            scripts:
+              - 'scripts/**'
+            docs:
+              - '**.md'
+              - 'docs/**'
+            ci:
+              - '.github/workflows/**'
+
+  # Security and vulnerability scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true' || github.event.inputs.force_deploy == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Secret scanning with Gitleaks
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  # Puppet validation and testing
+  puppet-validate:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.puppet == 'true' || github.event.inputs.force_deploy == 'true'
+    strategy:
+      matrix:
+        puppet_version: ['8.4.0']
+        ruby_version: ['3.1', '3.2']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby_version }}
+          bundler-cache: true
+          working-directory: puppet
+
+      - name: Install PDK and dependencies
+        run: |
+          gem install pdk -v ${{ env.PDK_VERSION }}
+          cd puppet
+          pdk bundle install
+
+      - name: Validate Puppet syntax
+        run: |
+          cd puppet
+          pdk validate --format=junit
+
+      - name: Run Puppet unit tests
+        run: |
+          cd puppet
+          pdk test unit --format=junit
+        env:
+          PUPPET_VERSION: ${{ matrix.puppet_version }}
+
+      - name: Upload test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Puppet Tests (Ruby ${{ matrix.ruby_version }}, Puppet ${{ matrix.puppet_version }})
+          path: 'puppet/junit/**/*.xml'
+          reporter: java-junit
+
+  # Terraform validation and planning
+  terraform-validate:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.terraform == 'true' || github.event.inputs.force_deploy == 'true'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Initialize TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive terraform/
+
+      - name: Terraform Init
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform validate
+
+      - name: tfsec Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform/
+
+  # Kubernetes manifests validation
+  k8s-validate:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.k8s == 'true' || github.event.inputs.force_deploy == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Validate Kubernetes manifests
+        run: |
+          # Validate base manifests
+          kubectl apply --dry-run=client -k k8s/base/
+
+          # Validate overlay manifests
+          for overlay in k8s/overlays/*/; do
+            echo "Validating overlay: $overlay"
+            if [ -f "$overlay/kustomization.yaml" ]; then
+              kubectl apply --dry-run=client -k "$overlay"
+            fi
+          done
+
+      - name: Validate with Kubeval
+        run: |
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+          
+          # Render and validate kustomize output
+          kubectl kustomize k8s/base/ | kubeval
+          for overlay in k8s/overlays/*/; do
+            if [ -f "$overlay/kustomization.yaml" ]; then
+              kubectl kustomize "$overlay" | kubeval
+            fi
+          done
+
+      - name: Helm lint charts
+        run: |
+          # Add any helm charts and lint them
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+  # Integration tests
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: [puppet-validate, terraform-validate, k8s-validate]
+    if: always() && (needs.puppet-validate.result == 'success' || needs.puppet-validate.result == 'skipped') && (needs.terraform-validate.result == 'success' || needs.terraform-validate.result == 'skipped') && (needs.k8s-validate.result == 'success' || needs.k8s-validate.result == 'skipped')
+    strategy:
+      matrix:
+        test-suite: [basic, data-platform, monitoring]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-html pytest-cov
+          pip install -r tests/requirements.txt
+        if: hashFiles('tests/requirements.txt') != ''
+
+      - name: Run integration tests
+        run: |
+          if [ -d "tests/integration/${{ matrix.test-suite }}" ]; then
+            pytest tests/integration/${{ matrix.test-suite }}/ -v --html=reports/integration-${{ matrix.test-suite }}.html --self-contained-html
+          else
+            echo "No tests found for ${{ matrix.test-suite }}, skipping"
+          fi
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-reports-${{ matrix.test-suite }}
+          path: reports/
+
+  # Build and publish documentation
+  build-docs:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.docs == 'true' || github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Generate Terraform docs
+        run: |
+          wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
+          tar -xzf terraform-docs-v0.17.0-linux-amd64.tar.gz
+          sudo mv terraform-docs /usr/local/bin/
+          
+          # Generate docs for each module
+          for module in terraform/modules/*/; do
+            terraform-docs markdown table --output-file README.md "$module"
+          done
+
+      - name: Generate Puppet docs
+        run: |
+          cd puppet
+          bundle install
+          bundle exec puppet strings generate --format markdown
+
+      - name: Build documentation site
+        run: |
+          # Add any static site generator here if needed
+          echo "Documentation generated successfully"
+
+  # Conditional deployment based on branch and validation results
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs: [security-scan, integration-test]
+    if: |
+      always() && 
+      github.ref == 'refs/heads/main' && 
+      github.event_name == 'push' &&
+      (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped') &&
+      (needs.integration-test.result == 'success' || needs.integration-test.result == 'skipped')
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Dev Environment
+        run: |
+          echo "🚀 Deploying to Development Environment"
+          echo "This would trigger the actual deployment process"
+          echo "Environment: dev"
+          # Add actual deployment commands here
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [deploy-dev]
+    if: always() && needs.deploy-dev.result == 'success' && github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging Environment
+        run: |
+          echo "🚀 Deploying to Staging Environment"
+          echo "This would trigger the actual deployment process"
+          echo "Environment: staging"
+          # Add actual deployment commands here
+
+  # Manual production deployment
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event.inputs.environment == 'prod' && github.event_name == 'workflow_dispatch'
+    environment: 
+      name: prod
+      url: https://cluster.yourdomain.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production Environment
+        run: |
+          echo "🚀 Deploying to Production Environment"
+          echo "This would trigger the actual deployment process"
+          echo "Environment: prod"
+          # Add actual deployment commands here
+
+  # Create release on successful prod deployment
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [deploy-prod]
+    if: always() && needs.deploy-prod.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="v$(date +%Y.%m.%d)-$(git rev-parse --short HEAD)"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Generate changelog
+          echo "## Changes" > release_notes.md
+          git log --oneline --no-merges $(git describe --tags --abbrev=0)..HEAD >> release_notes.md
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.release_notes.outputs.VERSION }}
+          release_name: Release ${{ steps.release_notes.outputs.VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false

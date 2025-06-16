@@ -1,0 +1,322 @@
+name: Release Management
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag ${{ github.event.inputs.version }}
+          git push origin ${{ github.event.inputs.version }}
+
+  build-artifacts:
+    runs-on: ubuntu-latest
+    needs: [create-release]
+    if: always() && (github.event_name == 'push' || needs.create-release.result == 'success')
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.event.inputs.version }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Create Helm package
+        run: |
+          # Package any Helm charts if they exist
+          if [ -d "k8s/helm-charts" ]; then
+            mkdir -p artifacts/helm
+            for chart in k8s/helm-charts/*; do
+              if [ -f "$chart/Chart.yaml" ]; then
+                helm package "$chart" -d artifacts/helm
+              fi
+            done
+          fi
+
+      - name: Create deployment package
+        run: |
+          mkdir -p artifacts/deployment
+          
+          # Create a deployment package with all necessary files
+          tar -czf artifacts/deployment/k3s-homelab-${{ steps.version.outputs.version }}.tar.gz \
+            --exclude='.git' \
+            --exclude='artifacts' \
+            --exclude='node_modules' \
+            --exclude='.terraform' \
+            --exclude='*.log' \
+            .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ steps.version.outputs.version }}
+          path: artifacts/
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [build-artifacts]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run comprehensive security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Container security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-artifacts.outputs.version }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: [build-artifacts]
+    strategy:
+      matrix:
+        environment: [dev, staging]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup test environment
+        run: |
+          # Set up a minimal test environment
+          echo "Setting up ${{ matrix.environment }} test environment"
+
+      - name: Run integration tests
+        run: |
+          # Run integration tests if they exist
+          if [ -d "tests/integration" ]; then
+            cd tests/integration
+            # Add your integration test commands here
+            echo "Running integration tests for ${{ matrix.environment }}"
+          fi
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, security-scan, integration-tests]
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.build-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying version ${{ needs.build-artifacts.outputs.version }} to staging"
+          # Add staging deployment commands here
+          # This could include:
+          # - Terraform apply for staging
+          # - Puppet deployment
+          # - Kubernetes manifests deployment
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests on staging"
+          # Add smoke test commands here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, security-scan, integration-tests, deploy-staging]
+    if: github.event.inputs.environment == 'prod' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.build-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Manual approval checkpoint
+        run: |
+          echo "🚀 Ready to deploy to production"
+          echo "Version: ${{ needs.build-artifacts.outputs.version }}"
+          echo "This deployment requires manual approval in GitHub Actions"
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying version ${{ needs.build-artifacts.outputs.version }} to production"
+          # Add production deployment commands here
+
+      - name: Run production smoke tests
+        run: |
+          echo "Running production smoke tests"
+          # Add production smoke test commands here
+
+      - name: Update monitoring
+        run: |
+          echo "Updating monitoring dashboards and alerts"
+          # Add monitoring update commands here
+
+  create-github-release:
+    runs-on: ubuntu-latest
+    needs: [build-artifacts, deploy-production]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'skipped')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-${{ needs.build-artifacts.outputs.version }}
+          path: artifacts/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from git commits
+          if [ -n "$(git tag --sort=-version:refname | head -2 | tail -1)" ]; then
+            PREVIOUS_TAG=$(git tag --sort=-version:refname | head -2 | tail -1)
+            CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
+          fi
+          
+          # Save changelog to file
+          cat > CHANGELOG.md << EOF
+          ## What's Changed
+          
+          $CHANGELOG
+          
+          ## Infrastructure Components
+          
+          - **Kubernetes**: K3s cluster with 4 Raspberry Pi nodes
+          - **Data Platform**: Apache NiFi, Trino, MinIO
+          - **Monitoring**: Prometheus, Grafana
+          - **Configuration Management**: Puppet
+          - **Infrastructure as Code**: Terraform
+          
+          ## Deployment Guide
+          
+          1. Download the deployment package: \`k3s-homelab-${{ needs.build-artifacts.outputs.version }}.tar.gz\`
+          2. Extract and follow the setup instructions in README.md
+          3. Ensure all prerequisites are met (see docs/SETUP.md)
+          
+          ## Security Notes
+          
+          - All container images have been scanned for vulnerabilities
+          - Secrets should be updated according to security guidelines
+          - Network policies are enforced for container isolation
+          EOF
+          
+          echo "changelog-file=CHANGELOG.md" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.build-artifacts.outputs.version }}
+          release_name: Pi K3s Home Lab ${{ needs.build-artifacts.outputs.version }}
+          body_path: ${{ steps.changelog.outputs.changelog-file }}
+          draft: false
+          prerelease: ${{ contains(needs.build-artifacts.outputs.version, 'rc') || contains(needs.build-artifacts.outputs.version, 'beta') || contains(needs.build-artifacts.outputs.version, 'alpha') }}
+
+      - name: Upload deployment package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/deployment/k3s-homelab-${{ needs.build-artifacts.outputs.version }}.tar.gz
+          asset_name: k3s-homelab-${{ needs.build-artifacts.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [create-github-release]
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.create-github-release.result }}" == "success" ]; then
+            echo "✅ Release ${{ needs.build-artifacts.outputs.version }} completed successfully"
+          else
+            echo "❌ Release ${{ needs.build-artifacts.outputs.version }} failed"
+          fi
+
+      - name: Send Slack notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            🚀 Pi K3s Home Lab Release: ${{ needs.build-artifacts.outputs.version }}
+            Status: ${{ needs.create-github-release.result }}
+            Environment: ${{ github.event.inputs.environment || 'production' }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

@@ -1,58 +1,51 @@
-# Base profile for all Pi nodes
-class profiles::base (
-  String $timezone = lookup('pi_cluster::timezone'),
-) {
-  # Set timezone
-  class { 'timezone':
-    timezone => $timezone,
-  }
-  
-  # Essential packages
+# Base profile for all Pi nodes - simplified version
+class profiles::base {
+  # Essential packages for K3s
   $base_packages = [
     'curl',
     'wget',
     'git',
     'vim',
     'htop',
-    'iotop',
-    'ncdu',
-    'tmux',
-    'python3-pip',
-    'jq',
+    'apt-transport-https',
+    'ca-certificates',
+    'software-properties-common',
   ]
-  
+
+  # Update package cache first
+  exec { 'apt_update':
+    command => '/usr/bin/apt-get update',
+    path    => ['/usr/bin'],
+  }
+
   package { $base_packages:
-    ensure => present,
+    ensure  => present,
+    require => Exec['apt_update'],
   }
-  
-  # Configure system limits
-  file { '/etc/security/limits.d/pi-cluster.conf':
-    ensure  => file,
-    content => template('profiles/limits.conf.erb'),
+
+  # Enable cgroups for K3s (simplified)
+  exec { 'enable_cgroups':
+    command => '/bin/sed -i \'s/$/ cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1/\' /boot/cmdline.txt',
+    unless  => '/bin/grep -q "cgroup_enable=memory" /boot/cmdline.txt',
+    path    => ['/bin', '/usr/bin'],
+    notify  => Exec['reboot_notice'],
   }
-  
-  # Enable cgroups for K3s
-  augeas { 'enable_cgroups':
-    context => '/files/boot/cmdline.txt',
-    changes => [
-      'set /files/boot/cmdline.txt/1 "$(cat /boot/cmdline.txt) cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1"',
-    ],
-    onlyif  => 'match /files/boot/cmdline.txt/*[. =~ regexp(".*cgroup_enable=memory.*")] size == 0',
-    notify  => Reboot['after_cgroups'],
+
+  exec { 'reboot_notice':
+    command     => '/bin/echo "Reboot required for cgroups - run: sudo reboot"',
+    refreshonly => true,
+    path        => ['/bin', '/usr/bin'],
   }
-  
-  reboot { 'after_cgroups':
-    when => refreshed,
-  }
-  
-  # Disable swap
-  exec { 'disable_swap':
-    command => '/sbin/dphys-swapfile swapoff && /sbin/dphys-swapfile uninstall',
-    onlyif  => '/usr/bin/test -f /var/swap',
-  }
-  
+
+  # Disable swap (required for K3s)
   service { 'dphys-swapfile':
     ensure => stopped,
     enable => false,
+  }
+
+  exec { 'disable_swap_now':
+    command => '/sbin/dphys-swapfile swapoff',
+    onlyif  => '/usr/bin/test -f /var/swap',
+    path    => ['/sbin', '/usr/bin'],
   }
 }

@@ -2,6 +2,106 @@
 [![Puppet CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml)
 [![Security Scanning](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml)
 [![Terraform CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml)
+[![CI/CD Main Pipeline](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml)
+
+# Pi K3s Home Lab: Enterprise Data Platform
+
+> **Production-Ready Kubernetes Data Engineering Platform on Raspberry Pi**
+> 
+> Complete Infrastructure-as-Code solution featuring NiFi, Trino, PostgreSQL, MinIO, and comprehensive monitoring - all running on ARM64 Raspberry Pi 5 hardware.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- 4x Raspberry Pi 5 (8GB RAM recommended)
+- Static IP addresses configured
+- SSH access configured with key-based authentication
+
+### One-Command Setup
+```bash
+# Clone and initialize
+git clone https://github.com/selectdimensions/k3s_home_lab.git
+cd k3s_home_lab
+
+# Copy and edit configuration
+cp inventory.yaml.example inventory.yaml
+cp terraform/environments/prod/terraform.tfvars.example terraform/environments/prod/terraform.tfvars
+
+# Edit with your IP addresses and secure passwords
+# Then deploy everything
+make quick-deploy
+```
+
+### Windows PowerShell
+```powershell
+# Clone and initialize
+git clone https://github.com/selectdimensions/k3s_home_lab.git
+cd k3s_home_lab
+
+# Copy and edit configuration  
+Copy-Item inventory.yaml.example inventory.yaml
+Copy-Item terraform\environments\prod\terraform.tfvars.example terraform\environments\prod\terraform.tfvars
+
+# Deploy everything
+.\Make.ps1 quick-deploy
+```
+
+## 🏗️ Architecture Overview
+
+This project implements a complete enterprise-grade data platform using Infrastructure as Code principles:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Management Layer                             │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐   │
+│  │  Terraform  │  │ Puppet Bolt  │  │  GitHub Actions     │   │
+│  │    IaC      │  │ Orchestration│  │     CI/CD           │   │
+│  └──────┬──────┘  └──────┬───────┘  └──────────┬──────────┘   │
+└─────────┼─────────────────┼─────────────────────┼──────────────┘
+          │                 │                     │
+          ▼                 ▼                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Pi Cluster Network                           │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Master Node (192.168.0.120)                               │ │
+│  │ ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐   │ │
+│  │ │Puppet Server│  │ K3s Control  │  │     NiFi        │   │ │
+│  │ │   + Vault   │  │    Plane     │  │ Orchestration   │   │ │
+│  │ └─────────────┘  └──────────────┘  └─────────────────┘   │ │
+│  └───────────┬────────────────────────────────────────────────┘ │
+│              │                                                   │
+│              ├─────────────┬─────────────┬─────────────────     │
+│              ▼             ▼             ▼                      │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │
+│  │Worker 1 (.121)  │ │Worker 2 (.122)  │ │Worker 3 (.123)  │   │
+│  │┌──────────────┐ │ │┌──────────────┐ │ │┌──────────────┐ │   │
+│  ││ Trino        │ │ ││ PostgreSQL   │ │ ││ MinIO        │ │   │
+│  ││ Workers      │ │ ││ Database     │ │ ││ Object Store │ │   │
+│  │└──────────────┘ │ │└──────────────┘ │ │└──────────────┘ │   │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 📊 Data Platform Components
+
+### Core Data Stack
+- **🔄 Apache NiFi**: Visual data flow orchestration and ETL
+- **⚡ Trino**: Distributed SQL query engine for data analytics  
+- **🐘 PostgreSQL**: Relational database with optimizations for ARM64
+- **📦 MinIO**: S3-compatible object storage for data lake
+- **🐍 JupyterLab**: Interactive data science environment
+
+### Monitoring & Observability
+- **📈 Prometheus**: Metrics collection and monitoring
+- **📊 Grafana**: Visualization dashboards and alerting
+- **📋 ELK Stack**: Centralized logging and analysis
+- **🔍 Jaeger**: Distributed tracing (optional)
+
+### Security & Governance
+- **🔐 HashiCorp Vault**: Secrets management
+- **🛡️ cert-manager**: Automated TLS certificate management
+- **🔒 OAuth2 Proxy**: Authentication for web services
+- **🚪 Network Policies**: Microsegmentation and security zones
 
 *Thinking...*
 

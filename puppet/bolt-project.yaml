@@ -1,1 +1,7 @@
 name: pi_cluster_automation
+
+modulepath:
+  - site-modules
+  - modules
+
+hiera-config: hiera.yaml

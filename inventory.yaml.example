@@ -1,0 +1,70 @@
+# Example inventory file for Pi Cluster
+# Copy this to inventory.yaml and update with your actual Pi IP addresses
+
+version: 2
+
+groups:
+  - name: masters
+    targets:
+      - name: pi-master
+        uri: 192.168.0.120
+        vars:
+          role: master
+          hostname: pi-master
+          arch: arm64
+        
+  - name: workers
+    targets:
+      - name: pi-worker-1
+        uri: 192.168.0.121
+        vars:
+          role: worker
+          hostname: pi-worker-1
+          arch: arm64
+          workload: compute
+          
+      - name: pi-worker-2
+        uri: 192.168.0.122
+        vars:
+          role: worker
+          hostname: pi-worker-2
+          arch: arm64
+          workload: data
+          
+      - name: pi-worker-3
+        uri: 192.168.0.123
+        vars:
+          role: worker
+          hostname: pi-worker-3
+          arch: arm64
+          workload: storage
+
+  - name: all
+    targets:
+      - pi-master
+      - pi-worker-1
+      - pi-worker-2
+      - pi-worker-3
+
+config:
+  ssh:
+    user: hezekiah
+    private-key: "~/.ssh/id_rsa"
+    host-key-check: false
+    run-as: root
+    run-as-command: "sudo -S -p 'Password: '"
+  
+  modulepath: "site-modules:modules"
+  
+  # Puppet-specific configuration
+  puppet:
+    environment: production
+    server: puppet.cluster.local
+    
+  # Transport configuration
+  transport: ssh
+  
+  # Additional options
+  options:
+    connect-timeout: 30
+    tty: false

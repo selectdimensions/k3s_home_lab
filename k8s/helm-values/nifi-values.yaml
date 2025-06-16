@@ -1,0 +1,76 @@
+# NiFi Helm Chart Values
+# Reference: https://artifacthub.io/packages/helm/cetic/nifi
+
+# Replica count for NiFi instances
+replicaCount: 1
+
+image:
+  repository: apache/nifi
+  tag: "1.23.2"
+  pullPolicy: IfNotPresent
+
+# Resource requirements
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+# Storage configuration
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  size: 20Gi
+
+# Security and authentication
+auth:
+  admin: "admin"
+  # Password will be set via Kubernetes secret
+
+# Service configuration
+service:
+  type: LoadBalancer
+  port: 8080
+  httpsPort: 8443
+
+# Ingress configuration
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: nifi.cluster.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Environment variables
+env:
+  - name: NIFI_WEB_HTTPS_PORT
+    value: "8443"
+  - name: NIFI_WEB_HTTPS_HOST
+    value: "0.0.0.0"
+  - name: NIFI_CLUSTER_IS_NODE
+    value: "true"
+  - name: NIFI_CLUSTER_NODE_PROTOCOL_PORT
+    value: "8082"
+  - name: NIFI_ZK_CONNECT_STRING
+    value: "zookeeper:2181"
+
+# Node selector for Raspberry Pi
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+# Tolerations for Pi-specific taints
+tolerations:
+  - key: "arm"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000

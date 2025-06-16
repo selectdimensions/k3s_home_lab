@@ -1,0 +1,20 @@
+{
+  "description": "Restore K3s cluster from backup",
+  "input_method": "stdin",
+  "parameters": {
+    "backup_path": {
+      "description": "Path to backup directory to restore from",
+      "type": "String"
+    },
+    "restore_type": {
+      "description": "Type of restore to perform (etcd, manifests, persistent, full)",
+      "type": "Optional[Enum[etcd, manifests, persistent, full]]",
+      "default": "full"
+    },
+    "force": {
+      "description": "Force restore without confirmation",
+      "type": "Optional[Boolean]",
+      "default": false
+    }
+  }
+}

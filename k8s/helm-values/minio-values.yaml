@@ -1,0 +1,161 @@
+# MinIO Helm Chart Values
+# Reference: https://artifacthub.io/packages/helm/bitnami/minio
+
+# Global configuration
+global:
+  minio:
+    existingSecret: minio-credentials
+
+# MinIO configuration
+auth:
+  rootUser: admin
+  # rootPassword will be set via existing secret
+  existingSecret: minio-credentials
+
+# Mode configuration
+mode: standalone
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  size: 50Gi
+  mountPath: /data
+
+# Service configuration
+service:
+  type: LoadBalancer
+  ports:
+    api: 9000
+    console: 9001
+
+# Ingress configuration
+ingress:
+  enabled: false
+  hostname: minio.cluster.local
+  annotations: {}
+
+# Console ingress
+consoleIngress:
+  enabled: false
+  hostname: minio-console.cluster.local
+
+# Default buckets to create
+defaultBuckets: "data-lake,backups,logs,ml-models"
+
+# Provisioning configuration
+provisioning:
+  enabled: true
+  users:
+    - username: trino
+      password: "trino-password"
+      policy: readwrite
+      setPolicies: true
+    - username: nifi
+      password: "nifi-password"
+      policy: readwrite
+      setPolicies: true
+    - username: backup
+      password: "backup-password"
+      policy: writeonly
+      setPolicies: true
+
+  policies:
+    - name: readwrite
+      statements:
+        - effect: Allow
+          actions:
+            - "s3:*"
+          resources:
+            - "arn:aws:s3:::*"
+    - name: writeonly
+      statements:
+        - effect: Allow
+          actions:
+            - "s3:PutObject"
+            - "s3:PutObjectAcl"
+            - "s3:GetObject"
+          resources:
+            - "arn:aws:s3:::backups/*"
+
+  buckets:
+    - name: data-lake
+      policy: none
+      versioning: true
+    - name: backups
+      policy: none
+      versioning: true
+      lifecycle:
+        - id: backup-lifecycle
+          status: Enabled
+          expiration:
+            days: 30
+    - name: logs
+      policy: none
+      versioning: false
+      lifecycle:
+        - id: log-lifecycle
+          status: Enabled
+          expiration:
+            days: 7
+    - name: ml-models
+      policy: none
+      versioning: true
+
+# Network policies
+networkPolicy:
+  enabled: true
+  allowExternal: true
+  allowExternalEgress: true
+
+# Node selector for Raspberry Pi
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+# Tolerations for Pi-specific taints
+tolerations:
+  - key: "arm"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+# Security context
+podSecurityContext:
+  enabled: true
+  fsGroup: 1001
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+
+# Container security context
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# Metrics configuration
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+# Extra environment variables
+extraEnvVars:
+  - name: MINIO_BROWSER_REDIRECT_URL
+    value: "http://minio-console.cluster.local"
+  - name: MINIO_SERVER_URL
+    value: "http://minio.cluster.local:9000"

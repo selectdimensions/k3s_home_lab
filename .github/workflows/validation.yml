@@ -1,0 +1,297 @@
+name: Validation and Linting
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip time-consuming tests'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  TERRAFORM_VERSION: '1.6.6'
+  KUBECTL_VERSION: '1.29.0'
+  HELM_VERSION: '3.14.0'
+  PUPPET_VERSION: '8.4.0'
+  PDK_VERSION: '3.0.1'
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.changes.outputs.terraform }}
+      puppet: ${{ steps.changes.outputs.puppet }}
+      k8s: ${{ steps.changes.outputs.k8s }}
+      scripts: ${{ steps.changes.outputs.scripts }}
+      docs: ${{ steps.changes.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+            puppet:
+              - 'puppet/**'
+            k8s:
+              - 'k8s/**'
+            scripts:
+              - 'scripts/**'
+            docs:
+              - '**.md'
+              - 'docs/**'
+
+  terraform-lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.terraform == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive -diff
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint --recursive --format compact
+
+      - name: Validate Terraform
+        run: |
+          for dir in terraform/environments/*/; do
+            echo "Validating $dir"
+            (cd "$dir" && terraform init -backend=false && terraform validate)
+          done
+
+      - name: Terraform Plan (Dry Run)
+        run: |
+          for dir in terraform/environments/*/; do
+            echo "Planning $dir"
+            (cd "$dir" && terraform init -backend=false && terraform plan -var-file=terraform.tfvars.example)
+          done
+
+  puppet-lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.puppet == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install Puppet Development Tools
+        run: |
+          gem install puppet-lint
+          gem install puppet-syntax
+          gem install metadata-json-lint
+
+      - name: Run Puppet Lint
+        run: |
+          cd puppet
+          find site-modules -name '*.pp' -exec puppet-lint \
+            --no-documentation-check \
+            --no-140chars-check \
+            --fail-on-warnings {} \;
+
+      - name: Check Puppet Syntax
+        run: |
+          cd puppet
+          find site-modules -name '*.pp' -exec puppet parser validate {} \;
+
+      - name: Validate Metadata
+        run: |
+          cd puppet
+          find site-modules -name 'metadata.json' -exec metadata-json-lint {} \;
+
+      - name: Install Bolt
+        run: gem install bolt
+
+      - name: Validate Bolt Project
+        run: |
+          cd puppet
+          bolt plan show --help > /dev/null
+
+  k8s-lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.k8s == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v${{ env.KUBECTL_VERSION }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v${{ env.HELM_VERSION }}
+
+      - name: Install kubeval
+        run: |
+          wget -O kubeval.tar.gz https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval.tar.gz
+          sudo cp kubeval /usr/local/bin
+
+      - name: Install kustomize
+        run: |
+          curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.2.1/kustomize_v5.2.1_linux_amd64.tar.gz | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Validate YAML syntax
+        run: |
+          find k8s -name '*.yaml' -o -name '*.yml' | while read file; do
+            echo "Validating YAML syntax: $file"
+            python3 -c "import yaml; yaml.safe_load(open('$file'))"
+          done
+
+      - name: Validate Kubernetes manifests
+        run: |
+          find k8s -name '*.yaml' -o -name '*.yml' | xargs kubeval --strict
+
+      - name: Validate Kustomizations
+        run: |
+          for env in dev prod; do
+            if [ -d "k8s/overlays/$env" ]; then
+              echo "Validating $env overlay..."
+              kustomize build k8s/overlays/$env | kubeval --strict
+            fi
+          done
+
+      - name: Lint Helm charts
+        run: |
+          if [ -d "k8s/helm-charts" ]; then
+            for chart in k8s/helm-charts/*; do
+              if [ -f "$chart/Chart.yaml" ]; then
+                echo "Linting $chart..."
+                helm lint "$chart"
+              fi
+            done
+          fi
+
+  scripts-lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.scripts == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          find scripts -name '*.sh' -exec shellcheck {} \;
+
+      - name: Install PowerShell
+        run: |
+          wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y powershell
+
+      - name: Validate PowerShell scripts
+        run: |
+          find . -name '*.ps1' -exec pwsh -Command "& {Get-Content '{}' | Out-Null}" \;
+
+  docs-lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Lint Markdown
+        run: |
+          markdownlint '**/*.md' --ignore node_modules --ignore .git
+
+      - name: Check for broken links
+        uses: lycheeverse/lychee-action@v1.8.0
+        with:
+          args: --verbose --no-progress '**/*.md'
+          fail: true
+
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Secret scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  validate-success:
+    runs-on: ubuntu-latest
+    needs: [terraform-lint, puppet-lint, k8s-lint, scripts-lint, docs-lint, security-checks]
+    if: always()
+    steps:
+      - name: Check if all validations passed
+        run: |
+          if [[ "${{ needs.terraform-lint.result }}" == "failure" || 
+                "${{ needs.puppet-lint.result }}" == "failure" || 
+                "${{ needs.k8s-lint.result }}" == "failure" || 
+                "${{ needs.scripts-lint.result }}" == "failure" || 
+                "${{ needs.docs-lint.result }}" == "failure" || 
+                "${{ needs.security-checks.result }}" == "failure" ]]; then
+            echo "❌ One or more validation checks failed"
+            exit 1
+          else
+            echo "✅ All validation checks passed"
+          fi

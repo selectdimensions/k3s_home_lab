@@ -1,0 +1,26 @@
+{
+  "description": "Deploy monitoring stack (Prometheus, Grafana, AlertManager)",
+  "input_method": "stdin",
+  "parameters": {
+    "stack_components": {
+      "description": "Components to deploy (prometheus, grafana, alertmanager, all)",
+      "type": "Optional[String]",
+      "default": "all"
+    },
+    "namespace": {
+      "description": "Kubernetes namespace for monitoring stack",
+      "type": "Optional[String]",
+      "default": "monitoring"
+    },
+    "persistent_storage": {
+      "description": "Enable persistent storage for monitoring data",
+      "type": "Optional[Boolean]",
+      "default": true
+    },
+    "retention_days": {
+      "description": "Prometheus data retention in days",
+      "type": "Optional[Integer]",
+      "default": 15
+    }
+  }
+}

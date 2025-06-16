@@ -1,0 +1,160 @@
+# PostgreSQL Helm Chart Values
+# Reference: https://artifacthub.io/packages/helm/bitnami/postgresql
+
+# Global configuration
+global:
+  postgresql:
+    auth:
+      existingSecret: postgres-credentials
+      secretKeys:
+        adminPasswordKey: postgres-password
+        userPasswordKey: user-password
+        replicationPasswordKey: replication-password
+
+# PostgreSQL configuration
+auth:
+  enablePostgresUser: true
+  postgresPassword: ""  # Will be set via secret
+  username: "appuser"
+  password: ""  # Will be set via secret
+  database: "pi_cluster"
+  existingSecret: "postgres-credentials"
+
+# Architecture configuration for ARM64
+architecture: standalone
+
+# Primary configuration
+primary:
+  persistence:
+    enabled: true
+    storageClass: "local-path"
+    size: 20Gi
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+  # Node selector for Raspberry Pi
+  nodeSelector:
+    kubernetes.io/arch: arm64
+
+  # Tolerations for Pi-specific taints
+  tolerations:
+    - key: "arm"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+
+  # PostgreSQL configuration
+  pgHbaConfiguration: |
+    local all all trust
+    host all all 127.0.0.1/32 md5
+    host all all ::1/128 md5
+    host all all 10.0.0.0/8 md5
+    host replication postgres 10.0.0.0/8 md5
+
+  configuration: |
+    # Connection settings
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 100
+    
+    # Memory settings (optimized for 2GB limit)
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    work_mem = 4MB
+    maintenance_work_mem = 64MB
+    
+    # WAL settings
+    wal_level = replica
+    max_wal_size = 1GB
+    min_wal_size = 80MB
+    
+    # Logging
+    log_destination = 'stderr'
+    logging_collector = on
+    log_statement = 'none'
+    log_min_error_statement = error
+    log_min_messages = warning
+    
+    # Autovacuum
+    autovacuum = on
+    
+    # ARM64 specific optimizations
+    random_page_cost = 1.1
+    seq_page_cost = 1.0
+
+  # Initialize databases and users
+  initdb:
+    scripts:
+      01-init-trino.sql: |
+        CREATE DATABASE trino;
+        CREATE USER trino WITH PASSWORD 'trino_password';
+        GRANT ALL PRIVILEGES ON DATABASE trino TO trino;
+      02-init-nifi.sql: |
+        CREATE DATABASE nifi;
+        CREATE USER nifi WITH PASSWORD 'nifi_password';
+        GRANT ALL PRIVILEGES ON DATABASE nifi TO nifi;
+      03-init-grafana.sql: |
+        CREATE DATABASE grafana;
+        CREATE USER grafana WITH PASSWORD 'grafana_password';
+        GRANT ALL PRIVILEGES ON DATABASE grafana TO grafana;
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    postgresql: 5432
+
+# Metrics and monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+  
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Network policy
+networkPolicy:
+  enabled: true
+  allowExternal: true
+
+# Backup configuration
+backup:
+  enabled: true
+  cronjob:
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    storage:
+      size: 10Gi
+      storageClass: "local-path"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# Security context
+securityContext:
+  enabled: true
+  fsGroup: 1001
+  runAsUser: 1001
+
+# Pod security context
+podSecurityContext:
+  enabled: true
+  fsGroup: 1001
+  runAsUser: 1001
+  runAsGroup: 1001

@@ -1,0 +1,184 @@
+Folder PATH listing
+Volume serial number is 0C96-A3D2
+C:.
+|   .gitignore
+|   bolt.ps1
+|   Dockerfile
+|   inventory-simple.yaml
+|   inventory.yaml
+|   inventory.yaml.example
+|   Make.ps1
+|   Makefile
+|   NUL
+|   project-structure.txt
+|   Readme.md
+|   
++---.github
+|   |   dependabot.yml
+|   |   
+|   \---workflows
+|           backup-dr.yml
+|           ci-cd-main.yml
+|           dependency-updates.yml
+|           k8s-apps-cd.yml
+|           puppet-ci.yml
+|           release.yml
+|           security-scan.yml
+|           terraform-ci.yml
+|           validation.yml
+|           
++---docs
+|   |   DEVELOPMENT-SETUP.md
+|   |   PUPPET-SETUP-COMPLETION.md
+|   |   WINDOWS-SETUP.md
+|   |   
+|   +---architecture
+|   +---puppet-guides
+|   |       cross-platform-setup.md
+|   |       
+|   \---runbooks
+|           node-failure-recovery.md
+|           
++---k8s
+|   +---applications
+|   +---base
+|   |   |   kustomization.yaml
+|   |   |   namespace.yaml
+|   |   |   
+|   |   +---monitoring
+|   |   +---networkpolicies
+|   |   \---rbac
+|   +---helm-values
+|   |       minio-values.yaml
+|   |       nifi-values.yaml
+|   |       postgresql-values.yaml
+|   |       trino-values.yaml
+|   |       
+|   \---overlays
+|       +---dev
+|       |       kustomization.yaml
+|       |       
+|       \---prod
+|               kustomization.yaml
+|               
++---monitoring
+|   +---alerts
+|   |       critical-alerts.yaml
+|   |       
+|   \---dashboards
+|           cluster-overview.json
+|           
++---puppet
+|   |   .rerun.json
+|   |   bolt-debug.log
+|   |   bolt-project.yaml
+|   |   hiera.yaml
+|   |   Puppetfile
+|   |   
+|   +---data
+|   |   |   common.yaml
+|   |   |   
+|   |   +---environments
+|   |   \---nodes
+|   +---manifests
+|   |       site.pp
+|   |       
+|   +---plans
+|   |       deploy.pp
+|   |       deploy_simple.pp
+|   |       restore.pp
+|   |       setup_monitoring_backup.pp
+|   |       
+|   +---puppet
+|   +---site-modules
+|   |   +---pi_cluster
+|   |   +---profiles
+|   |   |   \---manifests
+|   |   |       |   base.pp
+|   |   |       |   k3s_agent.pp
+|   |   |       |   k3s_server.pp
+|   |   |       |   
+|   |   |       \---base
+|   |   |               darwin.pp
+|   |   |               windows.pp
+|   |   |               
+|   |   \---roles
+|   |       \---manifests
+|   |               pi_worker.pp
+|   |               
+|   +---spec
+|   |   |   spec_helper.rb
+|   |   |   
+|   |   \---classes
+|   |       \---profiles
+|   |               k3s_server_spec.rb
+|   |               
+|   \---tasks
+|           backup_cluster.json
+|           backup_cluster.sh
+|           cluster_maintenance.json
+|           cluster_maintenance.sh
+|           cluster_overview.json
+|           cluster_overview.sh
+|           cluster_status.json
+|           cluster_status.sh
+|           deploy_data_stack.json
+|           deploy_data_stack.sh
+|           deploy_services.json
+|           deploy_services.sh
+|           health_check.json
+|           restore_cluster.json
+|           restore_cluster.sh
+|           setup_monitoring.json
+|           setup_monitoring.sh
+|           
++---scripts
+|   |   bootstrap.sh
+|   |   prepare-sd-card.sh
+|   |   setup-from-scratch.sh
+|   |   
+|   +---backup
+|   +---disaster-recovery
+|   |   \---disaster-recovery
+|   |           restore-cluster.sh
+|   |           
+|   \---setup
+|           install-puppet-agent.ps1
+|           install-puppet-agent.sh
+|           prepare-pis.ps1
+|           setup-windows.ps1
+|           
++---terraform
+|   |   backend.tf
+|   |   main.tf
+|   |   variables.tf
+|   |   
+|   +---environments
+|   |   +---dev
+|   |   +---prod
+|   |   |       main.tf
+|   |   |       outputs.tf
+|   |   |       terraform.tfvars.example
+|   |   |       variables.tf
+|   |   |       
+|   |   \---staging
+|   \---modules
+|       +---backup
+|       |       main.tf
+|       |       
+|       +---gitops
+|       |       main.tf
+|       |       
+|       +---k3s-cluster
+|       |       main.tf
+|       |       
+|       +---monitoring
+|       |       main.tf
+|       |       
+|       \---puppet-infrastructure
+|               main.tf
+|               
+\---tests
+    +---integration
+    +---puppet
+    \---terraform

@@ -1,0 +1,20 @@
+{
+  "description": "Perform cluster maintenance operations",
+  "input_method": "stdin",
+  "parameters": {
+    "operation": {
+      "description": "Maintenance operation to perform",
+      "type": "Enum[update_packages, restart_services, cleanup_images, disk_cleanup, log_rotation, all]"
+    },
+    "force": {
+      "description": "Force operation without confirmation",
+      "type": "Optional[Boolean]",
+      "default": false
+    },
+    "reboot_if_needed": {
+      "description": "Reboot system if kernel updates require it",
+      "type": "Optional[Boolean]",
+      "default": false
+    }
+  }
+}

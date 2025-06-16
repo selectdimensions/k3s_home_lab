@@ -1,0 +1,403 @@
+# =============================================================================
+# Pi K3s Home Lab Project - .gitignore
+# Last Updated: 2025-06-16
+# =============================================================================
+
+# -------------------- Operating System --------------------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -------------------- IDEs & Editors --------------------
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# -------------------- Terraform --------------------
+# Local .terraform directories
+**/.terraform/*
+.terraform/
+.terraform.lock.hcl
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# .tfvars files (may contain sensitive data)
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+!*.tfvars.example
+!*.auto.tfvars.example
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Terraform plan files
+*.tfplan
+*tfplan*
+
+# Include override files you do wish to add to version control
+!override.tf
+!override.tf.json
+!*_override.tf
+!*_override.tf.json
+
+# Terraform provider plugins
+.terraform.d/
+
+# CLI config files
+.terraformrc
+terraform.rc
+
+# -------------------- Kubernetes --------------------
+# Kubeconfig files (may contain sensitive credentials)
+kubeconfig*
+.kubeconfig*
+config
+*.kubeconfig
+kube-config*
+
+# Helm
+charts/*.tgz
+.helm/
+chart/charts/
+chart/Chart.lock
+
+# Kustomize build output
+kustomization.yaml.bak
+kustomized-cache/
+
+# Kubernetes secrets and sensitive files
+*secret*.yaml
+*secret*.yml
+!*secret*-template.*
+!*secret*-example.*
+
+# Velero backups
+backups/
+velero-backups/
+
+# -------------------- Puppet --------------------
+# Puppet logs and debug files
+puppet/bolt-debug.log
+puppet/*.log
+puppet/log/
+puppet/.bolt/
+
+# Puppet modules installed via bolt
+puppet/modules/
+puppet/.modules/
+
+# Ruby bundle and dependencies
+puppet/vendor/
+puppet/.bundle/
+puppet/Gemfile.lock
+
+# PDK cache and test artifacts
+puppet/.pdk/
+puppet/junit/
+puppet/spec/fixtures/
+puppet/pkg/
+
+# Puppet certificates and SSL
+puppet/ssl/
+puppet/*.pem
+puppet/*.crt
+puppet/*.key
+
+# Hiera eyaml keys (keep examples)
+puppet/keys/
+!puppet/keys/.gitkeep
+!puppet/keys/README.md
+
+# -------------------- Ansible --------------------
+# Ansible retry files
+*.retry
+
+# Ansible vault files (if any)
+*vault*
+!*vault*.example
+
+# Ansible facts cache
+ansible/fact_cache/
+
+# Ansible galaxy roles
+ansible/roles/
+!ansible/roles/requirements.yml
+
+# -------------------- Docker --------------------
+# Docker override files
+docker-compose.override.yml
+.dockerignore
+
+# -------------------- SSL/TLS Certificates --------------------
+# SSL certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+*.cer
+*.p12
+*.pfx
+*.jks
+
+# -------------------- SSH Keys --------------------
+# SSH private keys
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+*.pem
+*_rsa
+*_ed25519
+*_ecdsa
+*_dsa
+.ssh/
+keys/
+*.ppk
+
+# -------------------- Secrets & Credentials --------------------
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Secret files
+secrets.yaml
+secrets.yml
+*secret*
+*password*
+*credentials*
+!*example*
+!*template*
+
+# API keys and tokens
+.token
+*.token
+api_key
+api_keys
+auth_token
+
+# -------------------- Backups & Temporary Files --------------------
+# Backup files
+*.backup
+*.bak
+*.orig
+*.tmp
+*~
+
+# Archives
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+
+# -------------------- Logs --------------------
+# Log files
+*.log
+logs/
+log/
+*.out
+
+# -------------------- Database --------------------
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# -------------------- Node.js (if any) --------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -------------------- Python (if any) --------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# -------------------- Go (if any) --------------------
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# -------------------- Project Specific --------------------
+# Temporary parameter files
+temp_params.json
+temp_*
+tmp_*
+
+# NUL files (Windows artifact)
+NUL
+
+# Build artifacts
+build/
+dist/
+target/
+
+# Cache directories
+.cache/
+cache/
+.tmp/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Local development overrides
+docker-compose.local.yml
+docker-compose.override.yml
+local.yml
+local.yaml
+*.local.*
+
+# Monitoring data
+prometheus/data/
+grafana/data/
+grafana/logs/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+backup_*
+backups/
+!backups/.gitkeep
+!backups/README.md
+
+# -------------------- Keep Examples --------------------
+# Keep example files
+!*.example
+!*template*
+!examples/
+!docs/examples/
+
+# Keep important configuration templates
+!inventory.yaml.example
+!terraform.tfvars.example
+!values-*.yaml.example
+
+# -------------------- Monitoring & Observability --------------------
+# Prometheus data
+prometheus/data/
+
+# Grafana data
+grafana/data/
+
+# -------------------- CI/CD --------------------
+# Local CI testing
+.act/
+
+# -------------------- Development Tools --------------------
+# Local development overrides
+docker-compose.local.yml
+local.yml
+local.yaml
+
+# Test outputs
+test-results/
+junit.xml
+coverage.xml
+
+# -------------------- Misc --------------------
+# Temporary directories
+tmp/
+temp/
+
+# OS generated files
+.Trashes

@@ -1,0 +1,16 @@
+{
+  "description": "Deploy data platform services (NiFi, PostgreSQL, MinIO, etc.)",
+  "input_method": "stdin",
+  "parameters": {
+    "environment": {
+      "description": "Target environment (dev, staging, prod)",
+      "type": "String",
+      "default": "prod"
+    },
+    "services": {
+      "description": "Comma-separated list of services to deploy",
+      "type": "Optional[String]",
+      "default": "metallb,postgresql,minio,nifi,prometheus,grafana"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+# Production Environment Configuration
+# Copy this file to terraform.tfvars and update with your actual values
+
+# Cluster configuration
+cluster_name = "pi-k3s-cluster"
+cluster_domain = "cluster.local"
+
+# Network configuration
+metallb_ip_range = "192.168.0.200-192.168.0.250"
+
+# SSH configuration
+ssh_user = "hezekiah"
+ssh_key_path = "~/.ssh/id_rsa"
+
+# Generate secure passwords with:
+# openssl rand -base64 32
+
+# Database passwords (REQUIRED - Generate secure passwords)
+postgres_password = "CHANGE_ME_TO_SECURE_PASSWORD"
+minio_secret_key = "CHANGE_ME_TO_SECURE_SECRET_KEY"
+
+# Application passwords (REQUIRED - Generate secure passwords)
+nifi_admin_password = "CHANGE_ME_TO_SECURE_PASSWORD"
+trino_admin_password = "CHANGE_ME_TO_SECURE_PASSWORD"
+grafana_admin_password = "CHANGE_ME_TO_SECURE_PASSWORD"
+
+# Security
+vault_token = "CHANGE_ME_TO_SECURE_TOKEN"
+
+# Backup configuration
+backup_schedule = "0 2 * * *"  # Daily at 2 AM
+backup_retention = 30
+
+# Example commands to generate secure passwords:
+# postgres_password = "$(openssl rand -base64 32)"
+# minio_secret_key = "$(openssl rand -base64 32)"
+# vault_token = "$(openssl rand -base64 32)"
+# nifi_admin_password = "$(openssl rand -base64 16)"
+# trino_admin_password = "$(openssl rand -base64 16)"
+# grafana_admin_password = "$(openssl rand -base64 16)"

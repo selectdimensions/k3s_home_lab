@@ -1,0 +1,21 @@
+{
+  "description": "Get comprehensive cluster overview including all deployed services",
+  "input_method": "stdin",
+  "parameters": {
+    "include_pods": {
+      "description": "Include detailed pod information",
+      "type": "Optional[Boolean]",
+      "default": true
+    },
+    "include_services": {
+      "description": "Include service information",
+      "type": "Optional[Boolean]",
+      "default": true
+    },
+    "include_storage": {
+      "description": "Include storage and PVC information",
+      "type": "Optional[Boolean]",
+      "default": true
+    }
+  }
+}

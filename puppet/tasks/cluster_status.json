@@ -1,0 +1,10 @@
+{
+  "description": "Check K3s cluster status and health",
+  "input_method": "stdin",
+  "parameters": {
+    "service_check": {
+      "description": "Check specific service status",
+      "type": "Optional[String]"
+    }
+  }
+}
