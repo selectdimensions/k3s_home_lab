@@ -1,0 +1,23 @@
+version: 2
+config:
+  transport: ssh
+  ssh:
+    user: hezekiah
+    private-key: /home/boltuser/.ssh/pi_k3s_cluster_rsa
+    host-key-check: false
+    run-as: root
+groups:
+  - name: cluster
+    groups:
+      - name: masters
+        targets:
+          - uri: 192.168.0.120
+            name: pi-master
+      - name: workers
+        targets:
+          - uri: 192.168.0.121
+            name: pi-worker-1
+          - uri: 192.168.0.122
+            name: pi-worker-2
+          - uri: 192.168.0.123
+            name: pi-worker-3

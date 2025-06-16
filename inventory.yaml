@@ -1,69 +1,63 @@
 version: 2
 config:
+  transport: ssh
   ssh:
     user: hezekiah
-    private-key: ~/.ssh/keys/hobby/pi_k3s_cluster
+    private-key: /home/boltuser/.ssh/pi_k3s_cluster_rsa
     host-key-check: false
     run-as: root
-  puppet:
-    server: puppet.cluster.local
-    environment: production
 
 groups:
-  - name: all
+  - name: cluster
     groups:
-      - masters
-      - workers
+      - name: masters
+        targets:
+          - uri: 192.168.0.120
+            name: pi-master
+            alias: pi-master.cluster.local
+            vars:
+              role: master
+              k3s_role: server
+              node_labels:
+                node-role.kubernetes.io/master: "true"
+                node-type: "raspberry-pi"
+        vars:
+          k3s_server_args: "--disable traefik --disable servicelb"
+
+      - name: workers
+        targets:
+          - uri: 192.168.0.121
+            name: pi-worker-1
+            alias: pi-worker-1.cluster.local
+            vars:
+              role: worker
+              k3s_role: agent
+              node_labels:
+                node-role.kubernetes.io/worker: "true"
+                node-type: "raspberry-pi"
+                workload-type: "general"
+          - uri: 192.168.0.122
+            name: pi-worker-2
+            alias: pi-worker-2.cluster.local
+            vars:
+              role: worker
+              k3s_role: agent
+              node_labels:
+                node-role.kubernetes.io/worker: "true"
+                node-type: "raspberry-pi"
+                workload-type: "data"
+          - uri: 192.168.0.123
+            name: pi-worker-3
+            alias: pi-worker-3.cluster.local
+            vars:
+              role: worker
+              k3s_role: agent
+              node_labels:
+                node-role.kubernetes.io/worker: "true"
+                node-type: "raspberry-pi"
+                workload-type: "general"
+        vars:
+          k3s_agent_args: ""
     vars:
-      puppet_server: puppet.cluster.local
       cluster_name: pi-k3s-cluster
       cluster_domain: cluster.local
-
-  - name: masters
-    targets:
-      - uri: 192.168.0.120
-        name: pi-master
-        alias: pi-master.cluster.local
-        vars:
-          role: master
-          k3s_role: server
-          node_labels:
-            node-role.kubernetes.io/master: "true"
-            node-type: "raspberry-pi"
-    vars:
-      k3s_server_args: "--disable traefik --disable servicelb"
-
-  - name: workers
-    targets:
-      - uri: 192.168.0.121
-        name: pi-worker-1
-        alias: pi-worker-1.cluster.local
-        vars:
-          role: worker
-          k3s_role: agent
-          node_labels:
-            node-role.kubernetes.io/worker: "true"
-            node-type: "raspberry-pi"
-            workload-type: "general"
-      - uri: 192.168.0.122
-        name: pi-worker-2
-        alias: pi-worker-2.cluster.local
-        vars:
-          role: worker
-          k3s_role: agent
-          node_labels:
-            node-role.kubernetes.io/worker: "true"
-            node-type: "raspberry-pi"
-            workload-type: "data"
-      - uri: 192.168.0.123
-        name: pi-worker-3
-        alias: pi-worker-3.cluster.local
-        vars:
-          role: worker
-          k3s_role: agent
-          node_labels:
-            node-role.kubernetes.io/worker: "true"
-            node-type: "raspberry-pi"
-            workload-type: "general"
-    vars:
-      k3s_agent_args: ""

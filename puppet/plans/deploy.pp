@@ -4,8 +4,8 @@ plan pi_cluster_automation::deploy (
   String $environment = 'prod',
   Boolean $skip_k3s = false,
 ) {
-  # Gather facts
-  $target_facts = run_task('facts', $targets)
+  # Gather facts (commented out until facts task is available)
+  # $target_facts = run_task('facts', $targets)
   
   # Group targets by role
   $masters = $targets.filter |$target| {
