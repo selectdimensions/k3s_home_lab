@@ -1,0 +1,52 @@
+{
+  "description": "Install K3s master node",
+  "parameters": {
+    "k3s_version": {
+      "description": "K3s version to install",
+      "type": "String",
+      "default": "v1.28.4+k3s1"
+    },
+    "k3s_token": {
+      "description": "K3s cluster token",
+      "type": "String",
+      "sensitive": true
+    },
+    "cluster_cidr": {
+      "description": "Cluster CIDR for pods",
+      "type": "String",
+      "default": "10.42.0.0/16"
+    },
+    "service_cidr": {
+      "description": "Service CIDR for services",
+      "type": "String",
+      "default": "10.43.0.0/16"
+    },
+    "cluster_dns": {
+      "description": "Cluster DNS IP",
+      "type": "String",
+      "default": "10.43.0.10"
+    },
+    "install_traefik": {
+      "description": "Install Traefik ingress controller",
+      "type": "Boolean",
+      "default": false
+    },
+    "install_local_storage": {
+      "description": "Install local storage provider",
+      "type": "Boolean",
+      "default": true
+    },
+    "debug_mode": {
+      "description": "Enable debug logging",
+      "type": "Boolean",
+      "default": false
+    },
+    "environment": {
+      "description": "Environment name",
+      "type": "String",
+      "default": "production"
+    }
+  },
+  "files": ["pi_cluster_automation/install_k3s_master.sh"],
+  "input_method": "stdin"
+}

@@ -1,0 +1,22 @@
+# Development Environment Variables
+# Copy this file to terraform.tfvars and adjust values as needed
+
+# Grafana admin password (change this!)
+grafana_admin_password = "dev-admin-password-123"
+
+# SSH configuration for Pi nodes
+node_ssh_user = "hezekiah"
+node_ssh_private_key_path = "~/.ssh/id_rsa"
+
+# Puppet environment
+puppet_environment = "development"
+
+# Enable debug mode for development
+debug_mode = true
+
+# Resource constraints for development (conservative for Pi hardware)
+resource_constraints = {
+  max_cpu_per_pod    = "1"
+  max_memory_per_pod = "2Gi"
+  max_pods_per_node  = 50
+}

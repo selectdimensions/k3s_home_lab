@@ -1,36 +1,41 @@
-resource "helm_release" "prometheus_stack" {
-  name             = "kube-prometheus-stack"
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
-  namespace        = "monitoring"
-  create_namespace = true
-  version          = "51.0.3"
+# Monitoring Stack Module
+# Manages Prometheus, Grafana, and related monitoring components
 
-  values = [
-    templatefile("${path.module}/values/prometheus-stack.yaml", {
-      grafana_password      = var.grafana_password
-      alertmanager_config   = var.alertmanager_config
-      retention_days        = var.retention_days
-      storage_class         = var.storage_class
-    })
-  ]
-
-  set {
-    name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"
-    value = "false"
-  }
+# Generate monitoring configuration
+resource "local_file" "monitoring_config" {
+  filename = "${path.root}/monitoring-${var.environment}.yaml"
+  content = yamlencode({
+    environment = var.environment
+    namespace   = var.namespace
+    components  = var.components
+    cluster_name = var.cluster_name
+  })
 }
 
-resource "helm_release" "loki_stack" {
-  name             = "loki"
-  repository       = "https://grafana.github.io/helm-charts"
-  chart            = "loki-stack"
-  namespace        = "monitoring"
-  version          = "2.9.11"
+# Placeholder for Kubernetes manifests generation
+# In a real implementation, this would generate Helm values or K8s manifests
+resource "local_file" "prometheus_values" {
+  count    = var.components.prometheus.enabled ? 1 : 0
+  filename = "${path.root}/helm-values/prometheus-${var.environment}.yaml"
+  content = yamlencode({
+    prometheus = {
+      retention = var.components.prometheus.retention
+      storage = {
+        size = var.components.prometheus.storage_size
+      }
+    }
+  })
+}
 
-  values = [
-    file("${path.module}/values/loki-stack.yaml")
-  ]
-
-  depends_on = [helm_release.prometheus_stack]
+resource "local_file" "grafana_values" {
+  count    = var.components.grafana.enabled ? 1 : 0
+  filename = "${path.root}/helm-values/grafana-${var.environment}.yaml"
+  content = yamlencode({
+    grafana = {
+      adminPassword = var.components.grafana.admin_password
+      persistence = {
+        enabled = true
+        size = "5Gi"
+      }
+    }  })
 }

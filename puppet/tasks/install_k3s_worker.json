@@ -1,0 +1,31 @@
+{
+  "description": "Install K3s worker node",
+  "parameters": {
+    "k3s_version": {
+      "description": "K3s version to install",
+      "type": "String",
+      "default": "v1.28.4+k3s1"
+    },
+    "k3s_token": {
+      "description": "K3s cluster token",
+      "type": "String",
+      "sensitive": true
+    },
+    "master_ip": {
+      "description": "IP address of K3s master node",
+      "type": "String"
+    },
+    "debug_mode": {
+      "description": "Enable debug logging",
+      "type": "Boolean",
+      "default": false
+    },
+    "environment": {
+      "description": "Environment name",
+      "type": "String",
+      "default": "production"
+    }
+  },
+  "files": ["pi_cluster_automation/install_k3s_worker.sh"],
+  "input_method": "stdin"
+}

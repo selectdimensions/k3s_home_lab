@@ -1,0 +1,32 @@
+# Staging Environment Variables
+# Copy this file to terraform.tfvars and adjust values as needed
+
+# Grafana admin password (change this!)
+grafana_admin_password = "staging-admin-password-456"
+
+# Notification settings
+slack_webhook = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+letsencrypt_email = "your-email@example.com"
+
+# GitHub OAuth settings (optional)
+github_org = "your-github-org"
+
+# Backup settings
+backup_storage_location = "/mnt/backup"
+
+# SSH configuration for Pi nodes
+node_ssh_user = "hezekiah"
+node_ssh_private_key_path = "~/.ssh/id_rsa"
+
+# Puppet environment
+puppet_environment = "staging"
+
+# Resource constraints for staging
+resource_constraints = {
+  max_cpu_per_pod    = "2"
+  max_memory_per_pod = "4Gi"
+  max_pods_per_node  = 110
+}
+
+# MetalLB IP range for staging
+metallb_ip_range = "192.168.0.200-192.168.0.210"

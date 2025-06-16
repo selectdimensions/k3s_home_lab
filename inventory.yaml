@@ -19,8 +19,8 @@ groups:
               role: master
               k3s_role: server
               node_labels:
-                node-role.kubernetes.io/master: "true"
-                node-type: "raspberry-pi"
+                "node-role.kubernetes.io/master": "true"
+                "node-type": "raspberry-pi"
         vars:
           k3s_server_args: "--disable traefik --disable servicelb"
 
@@ -33,9 +33,9 @@ groups:
               role: worker
               k3s_role: agent
               node_labels:
-                node-role.kubernetes.io/worker: "true"
-                node-type: "raspberry-pi"
-                workload-type: "general"
+                "node-role.kubernetes.io/worker": "true"
+                "node-type": "raspberry-pi"
+                "workload-type": "general"
           - uri: 192.168.0.122
             name: pi-worker-2
             alias: pi-worker-2.cluster.local
@@ -43,9 +43,9 @@ groups:
               role: worker
               k3s_role: agent
               node_labels:
-                node-role.kubernetes.io/worker: "true"
-                node-type: "raspberry-pi"
-                workload-type: "data"
+                "node-role.kubernetes.io/worker": "true"
+                "node-type": "raspberry-pi"
+                "workload-type": "data"
           - uri: 192.168.0.123
             name: pi-worker-3
             alias: pi-worker-3.cluster.local
@@ -53,9 +53,9 @@ groups:
               role: worker
               k3s_role: agent
               node_labels:
-                node-role.kubernetes.io/worker: "true"
-                node-type: "raspberry-pi"
-                workload-type: "general"
+                "node-role.kubernetes.io/worker": "true"
+                "node-type": "raspberry-pi"
+                "workload-type": "general"
         vars:
           k3s_agent_args: ""
     vars:

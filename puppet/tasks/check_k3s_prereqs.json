@@ -1,0 +1,12 @@
+{
+  "description": "Check system prerequisites for K3s installation",
+  "parameters": {
+    "debug": {
+      "description": "Enable debug output",
+      "type": "Boolean",
+      "default": false
+    }
+  },
+  "files": ["pi_cluster_automation/check_k3s_prereqs.sh"],
+  "input_method": "stdin"
+}
