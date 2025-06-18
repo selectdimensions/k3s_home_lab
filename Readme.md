@@ -1,8 +1,13 @@
+[![Backup and Disaster Recovery](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/backup-dr.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/backup-dr.yml)
+[![CI/CD Main Pipeline](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml)
+[![Dependency Updates](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/dependency-updates.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/dependency-updates.yml)
 [![Kubernetes Applications CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/k8s-apps-cd.yml)
 [![Puppet CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/puppet-ci.yml)
+[![Release Management](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/release.yml)
 [![Security Scanning](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/security-scan.yml)
 [![Terraform CI/CD](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/terraform-ci.yml)
-[![CI/CD Main Pipeline](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/ci-cd-main.yml)
+[![Validation and Linting](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/validation.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/validation.yml)
+[![🚀 Complete Infrastructure Setup](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/setup.yml/badge.svg?branch=main)](https://github.com/selectdimensions/k3s_home_lab/actions/workflows/setup.yml)
 
 # Pi K3s Home Lab: Enterprise Data Platform
 
