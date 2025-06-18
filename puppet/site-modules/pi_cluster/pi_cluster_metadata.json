@@ -1,0 +1,51 @@
+{
+  "name": "pi_cluster",
+  "version": "1.0.0",
+  "author": "k3s_home_lab",
+  "summary": "Main module for Pi cluster automation and configuration",
+  "license": "Apache-2.0",
+  "source": "",
+  "dependencies": [
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 8.5.0 < 9.0.0"
+    },
+    {
+      "name": "puppetlabs/apt",
+      "version_requirement": ">= 9.0.0 < 10.0.0"
+    }
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "10",
+        "11",
+        "12"
+      ]
+    },
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "20.04",
+        "22.04"
+      ]
+    },
+    {
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease": [
+        "8",
+        "9"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 7.0.0 < 9.0.0"
+    }
+  ],
+  "pdk-version": "3.0.1",
+  "template-url": "pdk-default#3.0.1",
+  "template-ref": "tags/3.0.1-0-g5d17ec1"
+}

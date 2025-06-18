@@ -3,3 +3,4 @@ forge 'https://forge.puppet.com'
 # Essential modules only
 mod 'puppetlabs-stdlib', '8.5.0'
 mod 'puppetlabs-apt', '9.0.2'
+mod 'puppet-archive', '6.0.2'

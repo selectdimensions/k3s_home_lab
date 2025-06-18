@@ -364,33 +364,77 @@ function Get-ClusterOverview {
 }
 
 function Clear-AptLocks {
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory=$true, Position=0)]
         [string[]]$Targets
     )
 
-    Write-Step "🔧 Clearing APT locks on targets: $($Targets -join ', ')"
-
-    $clearCommands = @(
-        "pkill -f apt || echo 'No apt process found'",
-        "pkill -f dpkg || echo 'No dpkg process found'",
-        "rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* || echo 'Failed to remove lock files'",
-        "dpkg --configure -a || echo 'Error running dpkg configure'"
-    )
-
-    foreach ($cmd in $clearCommands) {
-        Write-Info "➡️ Running: $cmd"
-        try {
-            # Execute the command on all targets using Bolt
-            & "$PSScriptRoot\\bolt.ps1" -cmd "command run '$cmd'" -targets ($Targets -join ',') -inventory "inventory.yaml"
-        }
-        catch {
-            Write-Warning "⚠️ Command failed: $cmd. Continuing with next steps."
-        }
-        Start-Sleep -Seconds 2
+    # Normalize targets (handle both comma-separated and array input)
+    if ($Targets.Count -eq 1 -and $Targets[0] -match ",") {
+        $Targets = $Targets[0] -split "," | ForEach-Object { $_.Trim() }
     }
 
-    Write-Step "✅ APT locks cleared. Proceed with deployment."
+    Write-Step "🔧 Clearing APT locks on targets: $($Targets -join ', ')"
+
+    # Process termination commands (expected to fail when no processes exist)
+    $killCommands = @(
+        @{Command="sudo pkill -f apt"; Description="Stop APT processes"},
+        @{Command="sudo pkill -f dpkg"; Description="Stop DPKG processes"}
+    )
+
+    foreach ($cmd in $killCommands) {
+        Write-Info "➡️ $($cmd.Description)..."
+        try {
+            $result = & "$PSScriptRoot\bolt.ps1" -cmd "command run '$($cmd.Command)'" -targets ($Targets -join ',') -inventory "inventory.yaml"
+
+            # Check exit code but don't fail - these commands often exit non-zero when no processes exist
+            if ($LASTEXITCODE -ne 0) {
+                Write-Info "ℹ️ No active processes found (expected for $($cmd.Description))"
+            }
+        }
+        catch {
+            Write-Warning "⚠️ Process check failed (non-critical): $($cmd.Description)`n$_"
+        }
+        Start-Sleep -Seconds 1
+    }
+
+    # Lock file operations (should succeed)
+    $lockPaths = "/var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock*"
+    Write-Info "➡️ Removing lock files..."
+    try {
+        $result = & "$PSScriptRoot\bolt.ps1" -cmd "command run 'sudo rm -f $lockPaths'" -targets ($Targets -join ',') -inventory "inventory.yaml"
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "⚠️ Some lock files may not have been removed"
+        }
+        else {
+            Write-Info "✅ Lock files successfully removed"
+        }
+    }
+    catch {
+        Write-Error "❌ Failed to remove lock files`n$_"
+        return $false
+    }
+
+    # DPKG repair (should succeed)
+    Write-Info "➡️ Repairing DPKG configuration..."
+    try {
+        $result = & "$PSScriptRoot\bolt.ps1" -cmd "command run 'sudo dpkg --configure -a'" -targets ($Targets -join ',') -inventory "inventory.yaml"
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "❌ Failed to repair DPKG configuration"
+            return $false
+        }
+        Write-Info "✅ DPKG configuration repaired"
+    }
+    catch {
+        Write-Error "❌ Failed to repair DPKG configuration`n$_"
+        return $false
+    }
+
+    Write-Step "✅ APT lock clearance completed successfully"
+    return
 }
 
 function Get-NodeShell {
