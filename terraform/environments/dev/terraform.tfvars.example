@@ -6,7 +6,7 @@ grafana_admin_password = "dev-admin-password-123"
 
 # SSH configuration for Pi nodes
 node_ssh_user = "hezekiah"
-node_ssh_private_key_path = "~/.ssh/id_rsa"
+node_ssh_private_key_path = "~/.ssh/keys/hobby/pi_k3s_cluster_rsa"
 
 # Puppet environment
 puppet_environment = "development"

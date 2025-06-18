@@ -66,9 +66,9 @@ function Show-Help {
     Write-Host "  puppet-facts            Gather facts from all nodes"
     Write-Host "  puppet-apply            Apply Puppet configuration to specific nodes"
     Write-Host "  test                    Run integration tests"
-    Write-Host "  kubeconfig              Get kubeconfig from cluster"
-    Write-Host "  nifi-ui                 Port forward to NiFi UI"
+    Write-Host "  kubeconfig              Get kubeconfig from cluster"    Write-Host "  nifi-ui                 Port forward to NiFi UI"
     Write-Host "  grafana-ui              Port forward to Grafana UI"
+    Write-Host "  clear-apt-locks         Clear APT package manager locks"
     Write-Host "  node-shell              Get shell on a node"
     Write-Host ""
     Write-Host "Parameters:" -ForegroundColor Yellow
@@ -137,16 +137,31 @@ function Test-Configurations {
     }
 
     # Validate Puppet
-    Write-Info "Validating Puppet configurations..."
+    Write-Info "Validating Puppet modules..."
     Push-Location puppet
     try {
         if (Get-Command pdk -ErrorAction SilentlyContinue) {
-            pdk validate
-            if ($LASTEXITCODE -ne 0) { throw "Puppet validation failed" }
+            $modules = Get-ChildItem -Directory -Path "site-modules"
+            foreach ($module in $modules) {
+                if (Test-Path "$($module.FullName)\metadata.json") {
+                    Write-Host "`n📦 Validating module: $($module.Name)" -ForegroundColor Cyan
+                    Push-Location $module.FullName
+                    pdk validate
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Error "❌ PDK validation failed for module $($module.Name)"
+                        exit 1
+                    }
+                    Pop-Location
+                } else {
+                    Write-Warning "⚠️ Skipping $($module.Name) — not a PDK-compatible module"
+                }
+            }
+            Write-Host "`n✅ All Puppet modules validated successfully" -ForegroundColor Green
         } else {
-            Write-Warning "PDK not found, skipping Puppet validation"
+            Write-Warning "⚠️ PDK not found, skipping Puppet validation"
         }
-    } finally {
+    }
+    finally {
         Pop-Location
     }
 
@@ -170,9 +185,15 @@ function Invoke-PuppetDeploy {
     Write-Step "Deploying using Puppet Bolt..."
 
     try {
-        & "$PSScriptRoot\bolt.ps1" -cmd "plan run pi_cluster_automation::deploy" -targets $Targets -inventory "../inventory.yaml" -workdir "puppet"
+        # Use robust deployment plan that handles apt locks better
+        & "$PSScriptRoot\bolt.ps1" -cmd "plan run pi_cluster_automation::deploy_robust deploy_env=$Environment" -targets $Targets -inventory "../inventory.yaml" -workdir "puppet"
 
-        if ($LASTEXITCODE -ne 0) { throw "Puppet deployment failed" }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Deployment encountered issues. Trying fallback approach..."
+            & "$PSScriptRoot\bolt.ps1" -cmd "plan run pi_cluster_automation::deploy deploy_env=$Environment" -targets $Targets -inventory "../inventory.yaml" -workdir "puppet"
+
+            if ($LASTEXITCODE -ne 0) { throw "Puppet deployment failed" }
+        }
     } finally {
         # No location change needed since we're not using Push-Location
     }
@@ -340,6 +361,36 @@ function Get-ClusterOverview {
     Write-Step "Getting comprehensive cluster overview..."
 
     & "$PSScriptRoot\bolt.ps1" -cmd "task run pi_cluster_automation::cluster_overview" -targets "pi-master" -inventory "../inventory.yaml"
+}
+
+function Clear-AptLocks {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string[]]$Targets
+    )
+
+    Write-Step "🔧 Clearing APT locks on targets: $($Targets -join ', ')"
+
+    $clearCommands = @(
+        "pkill -f apt || echo 'No apt process found'",
+        "pkill -f dpkg || echo 'No dpkg process found'",
+        "rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* || echo 'Failed to remove lock files'",
+        "dpkg --configure -a || echo 'Error running dpkg configure'"
+    )
+
+    foreach ($cmd in $clearCommands) {
+        Write-Info "➡️ Running: $cmd"
+        try {
+            # Execute the command on all targets using Bolt
+            & "$PSScriptRoot\\bolt.ps1" -cmd "command run '$cmd'" -targets ($Targets -join ',') -inventory "inventory.yaml"
+        }
+        catch {
+            Write-Warning "⚠️ Command failed: $cmd. Continuing with next steps."
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    Write-Step "✅ APT locks cleared. Proceed with deployment."
 }
 
 function Get-NodeShell {
@@ -649,9 +700,9 @@ switch ($Command.ToLower()) {
     "setup-full" { Install-MonitoringAndBackup }
     "kubeconfig" { Get-Kubeconfig }
     "nifi-ui" { Start-NiFiPortForward }
-    "grafana-ui" { Start-GrafanaPortForward }
-    "cluster-status" { Get-ClusterStatus }
+    "grafana-ui" { Start-GrafanaPortForward }    "cluster-status" { Get-ClusterStatus }
     "cluster-overview" { Get-ClusterOverview }
+    "clear-apt-locks" { Clear-AptLocks }
     "node-shell" { Get-NodeShell }
     default {
         Write-Error "Unknown command: $Command"

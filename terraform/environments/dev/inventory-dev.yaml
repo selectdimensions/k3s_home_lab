@@ -37,6 +37,3 @@ groups:
       cluster_name: pi-k3s-dev
       cluster_domain: cluster.local
       environment: dev
-v"
-    "environment": "dev"
-"version": 2

@@ -111,3 +111,9 @@ variable "install_monitoring" {
   type        = bool
   default     = false
 }
+
+variable "cluster_domain" {
+  description = "Domain name for the cluster"
+  type        = string
+  default     = "cluster.local"
+}

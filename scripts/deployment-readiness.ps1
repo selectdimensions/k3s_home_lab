@@ -216,8 +216,8 @@ function Test-Configuration {
     }
 
     # Check SSH key configuration
-    $sshKeyPath = "$env:USERPROFILE\.ssh\id_rsa"
-    $sshPubKeyPath = "$env:USERPROFILE\.ssh\id_rsa.pub"
+    $sshKeyPath = "$env:USERPROFILE\.ssh\keys\hobby\pi_k3s_cluster_rsa"
+    $sshPubKeyPath = "$env:USERPROFILE\.ssh\keys\hobby\pi_k3s_cluster_rsa.pub"
 
     if ((Test-Path $sshKeyPath) -and (Test-Path $sshPubKeyPath)) {
         Add-CheckResult "Configuration" "SSH Keys" "PASS" "SSH key pair found"
@@ -278,7 +278,7 @@ function Test-PuppetReadiness {
     Write-Host "═══════════════════" -ForegroundColor Blue
 
     try {
-        Push-Location puppet
+        Push-Location puppet # Change to puppet directory
 
         # Check bolt command
         try {
@@ -291,10 +291,10 @@ function Test-PuppetReadiness {
         } catch {
             Add-CheckResult "Puppet" "Bolt Command" "FAIL" "Bolt not found" "Install Puppet Bolt"
         }        # Check bolt-project.yaml
-        if (Test-Path "puppet/bolt-project.yaml") {
+        if (Test-Path "bolt-project.yaml") {
             try {
                 # Simply validate the file exists and has basic content
-                $content = Get-Content "puppet/bolt-project.yaml" -Raw
+                $content = Get-Content "bolt-project.yaml" -Raw
                 if ($content -match "name:" -and $content -match "modulepath:") {
                     Add-CheckResult "Puppet" "Bolt Configuration" "PASS" "bolt-project.yaml valid"
                 } else {

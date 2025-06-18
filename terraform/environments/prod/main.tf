@@ -30,12 +30,12 @@ terraform {
 locals {
   environment  = "prod"
   cluster_name = var.cluster_name
-
   # Node configuration
   nodes = {
     pi-master = {
       ip   = "192.168.0.120"
       role = "master"
+      components = ["puppet-server", "k3s-server", "vault", "cert-manager"]
       labels = {
         "node-role.kubernetes.io/control-plane" = "true"
         "node-role.kubernetes.io/master"        = "true"
@@ -44,6 +44,7 @@ locals {
     pi-worker-1 = {
       ip   = "192.168.0.121"
       role = "worker"
+      components = ["k3s-agent", "trino", "monitoring"]
       labels = {
         "pi-cluster/workload" = "compute"
         "pi-cluster/trino"    = "worker"
@@ -52,6 +53,7 @@ locals {
     pi-worker-2 = {
       ip   = "192.168.0.122"
       role = "worker"
+      components = ["k3s-agent", "postgresql", "nifi"]
       labels = {
         "pi-cluster/workload" = "data"
         "pi-cluster/postgres" = "primary"
@@ -60,6 +62,7 @@ locals {
     pi-worker-3 = {
       ip   = "192.168.0.123"
       role = "worker"
+      components = ["k3s-agent", "minio", "backup"]
       labels = {
         "pi-cluster/workload" = "storage"
         "pi-cluster/minio"    = "primary"
@@ -84,13 +87,12 @@ provider "helm" {
 module "puppet_infrastructure" {
   source = "../../modules/puppet-infrastructure"
 
-  environment            = local.environment
-  cluster_domain         = var.cluster_domain
-  nodes                  = local.nodes
-  ssh_user               = var.ssh_user
-  ssh_key_path           = var.ssh_key_path
-  puppet_server_ip       = local.nodes["pi-master"].ip
-  puppet_server_hostname = "puppet.${var.cluster_domain}"
+  environment    = local.environment
+  cluster_name   = local.cluster_name
+  cluster_domain = var.cluster_domain
+  nodes          = local.nodes
+  ssh_user       = var.ssh_user
+  ssh_key_path   = var.ssh_key_path
 }
 
 # Deploy K3s cluster
@@ -124,9 +126,26 @@ module "data_platform" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  cluster_name           = local.cluster_name
-  environment            = local.environment
-  grafana_admin_password = var.grafana_admin_password
+  cluster_name = local.cluster_name
+  environment  = local.environment
+
+  components = {
+    prometheus = {
+      enabled      = true
+      retention    = "30d"
+      storage_size = "20Gi"
+    }
+    grafana = {
+      enabled        = true
+      admin_password = var.grafana_admin_password
+    }
+    node_exporter = {
+      enabled = true
+    }
+    alertmanager = {
+      enabled = true
+    }
+  }
 
   depends_on = [module.k3s_cluster]
 }
@@ -146,10 +165,13 @@ module "security" {
 module "backup" {
   source = "../../modules/backup"
 
-  cluster_name     = local.cluster_name
-  environment      = local.environment
-  backup_schedule  = var.backup_schedule
-  backup_retention = var.backup_retention
+  cluster_name            = local.cluster_name
+  environment             = local.environment
+  backup_schedule         = var.backup_schedule
+  backup_retention        = var.backup_retention
+  backup_storage_location = "/opt/backups"
+  minio_access_key        = "admin"
+  minio_secret_key        = var.minio_secret_key
 
   depends_on = [module.data_platform, module.monitoring]
 }
