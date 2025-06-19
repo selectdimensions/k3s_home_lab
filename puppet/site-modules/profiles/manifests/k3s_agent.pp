@@ -6,7 +6,7 @@
 # @param version The K3s version to install
 class profiles::k3s_agent (
   String $server_url = 'https://pi-master:6443',
-  String $token = '',
+  Optional[String] $token = undef,
   String $version = 'v1.28.4+k3s1',
 ) {
   # Ensure base profile is applied first
@@ -19,7 +19,7 @@ class profiles::k3s_agent (
   }
 
   $actual_token = $token ? {
-    ''      => lookup('pi_cluster::k3s::token', String, 'first', $token),
+    undef   => lookup('pi_cluster::k3s::token', Optional[String], 'first', undef),
     default => $token,
   }
 
@@ -29,7 +29,7 @@ class profiles::k3s_agent (
   }
 
   # Only install if we have the required parameters
-  if $actual_token != '' and $actual_server_url != '' {
+  if $actual_token and $actual_server_url != '' {
     # Install K3s agent
     exec { 'install_k3s_agent':
       command => epp('profiles/install_k3s_agent.sh.epp', {
