@@ -105,7 +105,10 @@ function Initialize-Project {
     Push-Location puppet
     try {
         if (Get-Command bundle -ErrorAction SilentlyContinue) {
+            bundle config set --local path 'vendor/bundle'
             bundle install
+            if ($LASTEXITCODE -ne 0) { throw "Bundle install failed" }
+            Write-Info "Puppet modules installed successfully"
         } else {
             Write-Warning "Ruby bundle not found, skipping bundle install"
         }
@@ -118,6 +121,11 @@ function Initialize-Project {
 
     # Update Helm repositories
     Write-Info "Updating Helm repositories..."
+    $repos = helm repo list --output json | ConvertFrom-Json
+    if ($repos.Count -eq 0) {
+        Write-Warning "No Helm repos found. Adding stable repo..."
+        helm repo add stable https://charts.helm.sh/stable
+    }
     helm repo update
 
     Write-Step "Project initialization complete!"
