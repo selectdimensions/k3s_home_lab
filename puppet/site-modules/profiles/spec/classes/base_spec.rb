@@ -1,4 +1,6 @@
 # puppet/site-modules/profiles/spec/classes/base_spec.rb
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'profiles::base' do

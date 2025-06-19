@@ -1,4 +1,6 @@
 # puppet/site-modules/roles/spec/classes/pi_worker_spec.rb
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'roles::pi_worker' do
