@@ -1,0 +1,9 @@
+# puppet/site-modules/profiles/templates/resolved.conf.epp
+[Resolve]
+DNS=8.8.8.8 1.1.1.1
+FallbackDNS=8.8.4.4 1.0.0.1
+Domains=~.
+DNSSEC=no
+DNSOverTLS=no
+Cache=yes
+DNSStubListener=yes

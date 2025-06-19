@@ -1,10 +1,14 @@
 # puppet/site-modules/profiles/manifests/k3s_agent.pp
+# K3s agent profile for worker nodes
+#
+# @param server_url The URL of the K3s server to join
+# @param token The K3s cluster token for authentication
+# @param version The K3s version to install
 class profiles::k3s_agent (
   String $server_url = lookup('pi_cluster::k3s::server_url', String, 'first', 'https://pi-master:6443'),
   String $token = lookup('pi_cluster::k3s::token', String, 'first', ''),
   String $version = lookup('pi_cluster::k3s::version', String, 'first', 'v1.28.4+k3s1'),
 ) {
-
   # Ensure base profile is applied first
   include profiles::base
 
@@ -13,10 +17,10 @@ class profiles::k3s_agent (
     # Install K3s agent
     exec { 'install_k3s_agent':
       command => epp('profiles/install_k3s_agent.sh.epp', {
-        'version'    => $version,
-        'server_url' => $server_url,
-        'token'      => $token,
-        'hostname'   => $facts['networking']['hostname'],
+          'version'    => $version,
+          'server_url' => $server_url,
+          'token'      => $token,
+          'hostname'   => $facts['networking']['hostname'],
       }),
       path    => ['/usr/bin', '/usr/local/bin', '/bin'],
       creates => '/usr/local/bin/k3s',

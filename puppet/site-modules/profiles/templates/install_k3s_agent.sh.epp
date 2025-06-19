@@ -1,15 +1,17 @@
+# puppet/site-modules/profiles/templates/install_k3s_server.sh.epp
 #!/bin/bash
-# puppet/site-modules/profiles/templates/install_k3s_agent.sh.epp
-# K3s agent installation script
+# K3s server installation script
 
 set -e
 
 export INSTALL_K3S_VERSION="<%= $version %>"
-export K3S_URL="<%= $server_url %>"
-export K3S_TOKEN="<%= $token %>"
 
-curl -sfL https://get.k3s.io | sh -s - agent \
+curl -sfL https://get.k3s.io | sh -s - server \
   --node-name "<%= $hostname %>" \
+  --write-kubeconfig-mode 644 \
+<% $disable_components.each |$component| { -%>
+  --disable <%= $component %> \
+<% } -%>
   --kubelet-arg="max-pods=110" \
   --kubelet-arg="image-gc-high-threshold=85" \
   --kubelet-arg="image-gc-low-threshold=80"

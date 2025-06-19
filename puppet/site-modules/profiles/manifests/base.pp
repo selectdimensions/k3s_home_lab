@@ -1,3 +1,4 @@
+# puppet/site-modules/profiles/manifests/base.pp
 # Base profile for all Pi nodes - simplified version
 class profiles::base {
   # Essential packages for K3s

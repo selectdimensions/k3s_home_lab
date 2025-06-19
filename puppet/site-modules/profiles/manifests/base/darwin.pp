@@ -1,8 +1,9 @@
+# puppet/site-modules/profiles/manifests/base/darwin.pp
 # macOS-specific base configuration
 class profiles::base::darwin {
   # Homebrew package management
   include homebrew
-  
+
   $mac_packages = [
     'kubectl',
     'helm',
@@ -11,12 +12,12 @@ class profiles::base::darwin {
     'jq',
     'yq',
   ]
-  
+
   package { $mac_packages:
     ensure   => present,
     provider => 'homebrew',
   }
-  
+
   # Configure macOS firewall
   exec { 'enable_firewall':
     command => '/usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on',

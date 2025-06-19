@@ -1,14 +1,22 @@
 {
-  "name": "roles",
+  "name": "k3shomelab-profiles",
   "version": "1.0.0",
-  "author": "k3s_home_lab",
-  "summary": "Role classes for Pi cluster node types",
+  "author": "k3shomelab",
+  "summary": "Profile classes for Pi cluster configuration",
   "license": "Apache-2.0",
   "source": "",
   "dependencies": [
     {
-      "name": "profiles",
-      "version_requirement": ">= 1.0.0 < 2.0.0"
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 8.5.0 < 9.0.0"
+    },
+    {
+      "name": "puppetlabs/apt",
+      "version_requirement": ">= 9.0.0 < 10.0.0"
+    },
+    {
+      "name": "puppet/archive",
+      "version_requirement": ">= 6.0.2 < 7.0.0"
     }
   ],
   "operatingsystem_support": [
@@ -25,13 +33,6 @@
       "operatingsystemrelease": [
         "20.04",
         "22.04"
-      ]
-    },
-    {
-      "operatingsystem": "RedHat",
-      "operatingsystemrelease": [
-        "8",
-        "9"
       ]
     }
   ],
