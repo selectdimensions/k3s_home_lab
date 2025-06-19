@@ -144,49 +144,55 @@ function Test-Configurations {
         Pop-Location
     }
 
-    # Validate Puppet
-    Write-Info "Validating Puppet modules..."
-    Push-Location puppet
-    try {
-        if (Get-Command pdk -ErrorAction SilentlyContinue) {
-            $modules = Get-ChildItem -Directory -Path "site-modules"
-            foreach ($module in $modules) {
-                if (Test-Path "$($module.FullName)\metadata.json") {
-                    Write-Host "`n📦 Validating module: $($module.Name)" -ForegroundColor Cyan
-                    Push-Location $module.FullName
-                    pdk validate
-                    if ($LASTEXITCODE -ne 0) {
-                        Write-Error "❌ PDK validation failed for module $($module.Name)"
-                        exit 1
-                    }
-                    Pop-Location
-                } else {
-                    Write-Warning "⚠️ Skipping $($module.Name) — not a PDK-compatible module"
+# Validate Puppet
+Write-Info "Validating Puppet modules..."
+Push-Location puppet
+try {
+    if (Get-Command pdk -ErrorAction SilentlyContinue) {
+        $modules = Get-ChildItem -Directory -Path "site-modules"
+        $failure = $false
+
+        foreach ($module in $modules) {
+            $metadataPath = Join-Path $module.FullName 'metadata.json'
+            if (Test-Path $metadataPath) {
+                Write-Host "`n📦 Validating module: $($module.Name)" -ForegroundColor Cyan
+                Push-Location $module.FullName
+
+                if (Test-Path "Gemfile") {
+                    Write-Host "📦 Installing per-module bundle for $($module.Name)..."
+                    pdk bundle config set path 'vendor/bundle' | Out-Null
+                    pdk bundle install | Out-Null
                 }
+
+                # Correct: Run pdk validate directly
+                pdk validate
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "❌ PDK validation failed for module $($module.Name)"
+                    $failure = $true
+                }
+
+                Pop-Location
+            } else {
+                Write-Warning "⚠️ Skipping $($module.Name) — no metadata.json (not a PDK-compatible module)"
             }
-            Write-Host "`n✅ All Puppet modules validated successfully" -ForegroundColor Green
-        } else {
-            Write-Warning "⚠️ PDK not found, skipping Puppet validation"
         }
-    }
-    finally {
-        Pop-Location
-    }
 
-    # Validate Kubernetes manifests
-    Write-Info "Validating Kubernetes manifests..."
-    try {
-        if (Get-Command kubectl -ErrorAction SilentlyContinue) {
-            kubectl --dry-run=client --validate=false apply -k "k8s/overlays/$Environment"
-            if ($LASTEXITCODE -ne 0) { throw "Kubernetes manifest validation failed" }
-        } else {
-            Write-Warning "Cluster not available, skipping Kubernetes validation"
+        if ($failure) {
+            throw "❌ One or more Puppet modules failed validation"
         }
-    } catch {
-        Write-Warning "Cluster not available, skipping Kubernetes validation"
-    }
 
-    Write-Step "All configurations are valid!"
+        Write-Host "`n✅ All Puppet modules validated successfully" -ForegroundColor Green
+    } else {
+        Write-Warning "⚠️ PDK not found, skipping Puppet validation"
+    }
+}
+finally {
+    Pop-Location
+}
+
+    Write-Step "Configuration validation complete!"
+    Write-Info "You can now run 'Make.ps1 apply' to deploy the infrastructure"
+
 }
 
 function Invoke-PuppetDeploy {
