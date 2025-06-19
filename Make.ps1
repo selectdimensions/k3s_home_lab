@@ -13,6 +13,11 @@ param(
     [string]$Operation = "all"
 )
 
+function Write-Success {
+    param([string]$Message)
+    Write-Host "✅ $Message" -ForegroundColor Green
+}
+
 # Colors for output
 function Write-Step {
     param([string]$Message)
@@ -248,15 +253,16 @@ function Invoke-Plan {
 
     Push-Location "terraform/environments/$Environment"
     try {
+        # Check if terraform.tfvars exists
         if (Test-Path "terraform.tfvars") {
-            terraform plan -var-file=terraform.tfvars
+            Write-Info "Using terraform.tfvars file"
+            terraform plan
         } else {
-            Write-Warning "terraform.tfvars not found, using terraform.tfvars.example"
+            Write-Warning "terraform.tfvars not found, using defaults"
             if (Test-Path "terraform.tfvars.example") {
-                terraform plan -var-file=terraform.tfvars.example
-            } else {
-                terraform plan
+                Write-Info "Consider copying terraform.tfvars.example to terraform.tfvars"
             }
+            terraform plan
         }
         if ($LASTEXITCODE -ne 0) { throw "Terraform plan failed" }
     } finally {
@@ -593,96 +599,149 @@ function Invoke-TerraformValidate {
 }
 
 function Invoke-TerraformPlan {
-    Write-Step "Planning Terraform changes for environment: $Environment"
+    param(
+        [string]$Environment = "dev"
+    )
 
-    $terraformPath = "terraform/environments/$Environment"
-    if (-not (Test-Path $terraformPath)) {
-        Write-Error "Terraform environment path not found: $terraformPath"
-        return
+    Write-Step "Planning infrastructure changes..."
+
+    # Set the working directory based on environment
+    $TerraformDir = "terraform/environments/$Environment"
+
+    if (-not (Test-Path $TerraformDir)) {
+        throw "Environment directory not found: $TerraformDir"
     }
 
-    Push-Location $terraformPath
-    try {
-        Write-Info "Running: terraform plan"
-        terraform plan -out="terraform-$Environment.tfplan"
-        if ($LASTEXITCODE -ne 0) {
-            throw "Terraform plan failed with exit code $LASTEXITCODE"
+    # Check if terraform.tfvars exists
+    $TfVarsFile = "$TerraformDir/terraform.tfvars"
+    if (-not (Test-Path $TfVarsFile)) {
+        Write-Warning "terraform.tfvars not found at $TfVarsFile"
+        Write-Warning "Copy terraform.tfvars.example to terraform.tfvars and update values"
+
+        $ExampleFile = "$TerraformDir/terraform.tfvars.example"
+        if (Test-Path $ExampleFile) {
+            Write-Info "Example file available at: $ExampleFile"
         }
-        Write-Info "✅ Terraform plan completed successfully"
-        Write-Info "Plan saved to: terraform-$Environment.tfplan"
+    }
+
+    Push-Location $TerraformDir
+    try {
+        # Initialize if needed
+        if (-not (Test-Path ".terraform")) {
+            Write-Info "Initializing Terraform..."
+            terraform init
+            if ($LASTEXITCODE -ne 0) {
+                throw "Terraform init failed"
+            }
+        }
+
+        # Run terraform plan
+        Write-Info "Running terraform plan for environment: $Environment"
+        terraform plan
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform plan failed"
+        }
+
+        function Write-Success {
+    param([string]$Message)
+    Write-Host "✅ $Message" -ForegroundColor Green
+}
+
+        Write-Success "Terraform plan completed successfully"
+
     } catch {
         Write-Error "Terraform plan failed: $_"
         throw
+
     } finally {
         Pop-Location
     }
 }
 
 function Invoke-TerraformApply {
-    Write-Step "Applying Terraform changes for environment: $Environment"
+    param(
+        [string]$Environment = "dev",
+        [switch]$AutoApprove
+    )
 
-    $terraformPath = "terraform/environments/$Environment"
-    if (-not (Test-Path $terraformPath)) {
-        Write-Error "Terraform environment path not found: $terraformPath"
-        return
+    Write-Step "Applying infrastructure changes..."
+
+    $TerraformDir = "terraform/environments/$Environment"
+
+    if (-not (Test-Path $TerraformDir)) {
+        throw "Environment directory not found: $TerraformDir"
     }
 
-    Push-Location $terraformPath
+    Push-Location $TerraformDir
     try {
-        $planFile = "terraform-$Environment.tfplan"
-        if (Test-Path $planFile) {
-            Write-Info "Running: terraform apply $planFile"
-            terraform apply $planFile
+        # Run terraform apply
+        $ApplyArgs = @()
+        if ($AutoApprove) {
+            $ApplyArgs += "-auto-approve"
+        }
+
+        Write-Info "Running terraform apply for environment: $Environment"
+        if ($ApplyArgs.Count -gt 0) {
+            terraform apply @ApplyArgs
         } else {
-            Write-Info "Running: terraform apply -auto-approve"
-            terraform apply -auto-approve
+            terraform apply
         }
 
         if ($LASTEXITCODE -ne 0) {
-            throw "Terraform apply failed with exit code $LASTEXITCODE"
+            throw "Terraform apply failed"
         }
-        Write-Info "✅ Terraform apply completed successfully"
 
-        # Clean up plan file
-        if (Test-Path $planFile) {
-            Remove-Item $planFile -Force
-            Write-Info "Cleaned up plan file: $planFile"
-        }
-    } catch {
-        Write-Error "Terraform apply failed: $_"
-        throw
+        Write-Success "Terraform apply completed successfully"
+
     } finally {
         Pop-Location
     }
 }
 
 function Invoke-TerraformDestroy {
-    Write-Step "Destroying Terraform infrastructure for environment: $Environment"
+    param(
+        [string]$Environment = "dev",
+        [switch]$AutoApprove
+    )
 
-    $terraformPath = "terraform/environments/$Environment"
-    if (-not (Test-Path $terraformPath)) {
-        Write-Error "Terraform environment path not found: $terraformPath"
-        return
+    Write-Step "Destroying infrastructure..."
+
+    $TerraformDir = "terraform/environments/$Environment"
+
+    if (-not (Test-Path $TerraformDir)) {
+        throw "Environment directory not found: $TerraformDir"
     }
 
-    Write-Warning "⚠️  This will destroy all infrastructure in environment: $Environment"
-    $confirmation = Read-Host "Are you sure you want to continue? (yes/no)"
-    if ($confirmation -ne "yes") {
-        Write-Info "Operation cancelled"
-        return
-    }
-
-    Push-Location $terraformPath
-    try {
-        Write-Info "Running: terraform destroy -auto-approve"
-        terraform destroy -auto-approve
-        if ($LASTEXITCODE -ne 0) {
-            throw "Terraform destroy failed with exit code $LASTEXITCODE"
+    # Confirmation prompt unless auto-approve is used
+    if (-not $AutoApprove) {
+        $Confirmation = Read-Host "Are you sure you want to destroy the $Environment environment? (yes/no)"
+        if ($Confirmation -ne "yes") {
+            Write-Info "Destroy cancelled"
+            return
         }
-        Write-Info "✅ Terraform destroy completed successfully"
-    } catch {
-        Write-Error "Terraform destroy failed: $_"
-        throw
+    }
+
+    Push-Location $TerraformDir
+    try {
+        $DestroyArgs = @()
+        if ($AutoApprove) {
+            $DestroyArgs += "-auto-approve"
+        }
+
+        Write-Info "Running terraform destroy for environment: $Environment"
+        if ($DestroyArgs.Count -gt 0) {
+            terraform destroy @DestroyArgs
+        } else {
+            terraform destroy
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform destroy failed"
+        }
+
+        Write-Success "Terraform destroy completed successfully"
+
     } finally {
         Pop-Location
     }
