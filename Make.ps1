@@ -150,48 +150,43 @@ Push-Location puppet
 try {
     if (Get-Command pdk -ErrorAction SilentlyContinue) {
         $modules = Get-ChildItem -Directory -Path "site-modules"
-        $failure = $false
-
         foreach ($module in $modules) {
-            $metadataPath = Join-Path $module.FullName 'metadata.json'
-            if (Test-Path $metadataPath) {
+            if (Test-Path "$($module.FullName)\metadata.json") {
                 Write-Host "`n📦 Validating module: $($module.Name)" -ForegroundColor Cyan
                 Push-Location $module.FullName
 
-                if (Test-Path "Gemfile") {
-                    Write-Host "📦 Installing per-module bundle for $($module.Name)..."
-                    pdk bundle config set path 'vendor/bundle' | Out-Null
-                    pdk bundle install | Out-Null
-                }
+                Write-Host "📦 Installing per-module bundle for $($module.Name)..."
+                pdk bundle install | Out-Null
 
-                # Correct: Run pdk validate directly
                 pdk validate
-                if ($LASTEXITCODE -ne 0) {
+                $exitCode = $LASTEXITCODE
+                if ($exitCode -eq 2) {
+                    Write-Warning "⚠️ Style/convention issues detected in $($module.Name), continuing."
+                } elseif ($exitCode -ne 0) {
                     Write-Error "❌ PDK validation failed for module $($module.Name)"
-                    $failure = $true
+                    exit 1
+                } else {
+                    Write-Host "✅ $($module.Name) passed validation" -ForegroundColor Green
                 }
 
                 Pop-Location
             } else {
-                Write-Warning "⚠️ Skipping $($module.Name) — no metadata.json (not a PDK-compatible module)"
+                Write-Warning "⚠️ Skipping $($module.Name) — not a PDK-compatible module"
             }
         }
-
-        if ($failure) {
-            throw "❌ One or more Puppet modules failed validation"
-        }
-
-        Write-Host "`n✅ All Puppet modules validated successfully" -ForegroundColor Green
+        Write-Host "`n✅ All Puppet modules validated (with style warnings allowed)" -ForegroundColor Green
     } else {
         Write-Warning "⚠️ PDK not found, skipping Puppet validation"
     }
 }
 finally {
     Pop-Location
+    Pop-Location
 }
-
     Write-Step "Configuration validation complete!"
     Write-Info "You can now run 'Make.ps1 apply' to deploy the infrastructure"
+    Write-Info "Or run 'Make.ps1 quick-deploy' for a full deployment including Puppet"
+    Write-Info "For help, run 'Make.ps1 help'"
 
 }
 

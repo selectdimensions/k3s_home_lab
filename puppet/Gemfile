@@ -1,8 +1,9 @@
-# puppet/Gemfile
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
+gem 'metadata-json-lint'
 gem 'puppet'
 gem 'puppet-strings'
 gem 'puppetlabs_spec_helper'
-gem 'rake', '~> 13.0'  # 13.0.6 or 13.2.1 is fine
-gem 'metadata-json-lint'
+gem 'rake', '~> 13.0'

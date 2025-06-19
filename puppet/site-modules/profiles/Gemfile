@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'puppet'
-gem 'pdk'
-gem 'puppet-lint'
 gem 'metadata-json-lint'
-gem 'rubocop', require: false
+gem 'pdk'
+gem 'puppet'
+gem 'puppetlabs_spec_helper'
+gem 'puppet-lint'
 gem 'rspec'
 gem 'rspec-puppet'
-gem 'puppetlabs_spec_helper'
+gem 'rubocop', require: false
