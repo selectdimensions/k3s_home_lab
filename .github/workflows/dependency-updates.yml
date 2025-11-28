@@ -25,6 +25,8 @@ env:
 jobs:
   check-terraform-updates:
     runs-on: ubuntu-latest
+    outputs:
+      terraform_updates_available: ${{ steps.terraform-updates.outputs.terraform_updates_available }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,30 +36,55 @@ jobs:
         with:
           terraform_version: latest
 
+      - name: Initialize Terraform (root)
+        run: |
+          cd terraform
+          terraform init -backend=false
+
+      - name: Initialize Terraform environments
+        run: |
+          for env_dir in terraform/environments/*/; do
+            echo "Initializing $env_dir..."
+            (cd "$env_dir" && terraform init -backend=false) || true
+          done
+
       - name: Check for Terraform provider updates
         id: terraform-updates
         run: |
           cd terraform
-          
-          # Check for provider updates
-          terraform providers mirror /tmp/providers
-          
-          # Extract current versions
-          current_versions=$(grep -r "version.*=" . | grep -E "(source|version)" || echo "")
-          
+
+          # Extract current provider versions from lock file or config
           echo "Current Terraform provider versions:"
-          echo "$current_versions"
-          
-          # Create update report
+          if [ -f .terraform.lock.hcl ]; then
+            cat .terraform.lock.hcl
+          else
+            grep -r "version" *.tf 2>/dev/null || echo "No version constraints found in root"
+          fi
+
+          # Check each environment
+          for env_dir in environments/*/; do
+            echo "--- Checking $env_dir ---"
+            if [ -f "$env_dir/.terraform.lock.hcl" ]; then
+              cat "$env_dir/.terraform.lock.hcl"
+            fi
+          done
+
           echo "terraform_updates_available=true" >> $GITHUB_OUTPUT
 
-      - name: Check Terraform module updates
+      - name: Validate Terraform configurations
         run: |
-          # Check for updates to any external modules
-          echo "Checking for Terraform module updates..."
+          cd terraform
+          terraform validate || true
+
+          for env_dir in environments/*/; do
+            echo "Validating $env_dir..."
+            (cd "$env_dir" && terraform validate) || true
+          done
 
   check-puppet-updates:
     runs-on: ubuntu-latest
+    outputs:
+      puppet_updates_available: ${{ steps.puppet-updates.outputs.puppet_updates_available }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,12 +98,12 @@ jobs:
         id: puppet-updates
         run: |
           cd puppet
-          
+
           # Check Puppetfile for module updates
           if [ -f Puppetfile ]; then
             echo "Current Puppet modules:"
             cat Puppetfile
-            
+
             # Check for available updates (this would need a custom script)
             echo "puppet_updates_available=true" >> $GITHUB_OUTPUT
           fi
@@ -90,6 +117,8 @@ jobs:
 
   check-helm-updates:
     runs-on: ubuntu-latest
+    outputs:
+      helm_updates_available: ${{ steps.helm-updates.outputs.helm_updates_available }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -117,17 +146,19 @@ jobs:
             "bitnami/minio"
             "ingress-nginx/ingress-nginx"
           )
-          
+
           echo "Checking for Helm chart updates..."
           for chart in "${charts_to_check[@]}"; do
             echo "Checking $chart..."
             helm search repo "$chart" --versions | head -5
           done
-          
+
           echo "helm_updates_available=true" >> $GITHUB_OUTPUT
 
   check-container-updates:
     runs-on: ubuntu-latest
+    outputs:
+      container_updates_available: ${{ steps.container-updates.outputs.container_updates_available }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -143,17 +174,19 @@ jobs:
             "minio/minio:latest"
             "nginx:alpine"
           )
-          
+
           echo "Checking for container image updates..."
           for image in "${images[@]}"; do
             echo "Checking $image..."
             # This could use tools like crane or docker to check for newer versions
           done
-          
+
           echo "container_updates_available=true" >> $GITHUB_OUTPUT
 
   check-security-updates:
     runs-on: ubuntu-latest
+    outputs:
+      security_updates_required: ${{ steps.security-check.outputs.security_updates_required }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -167,18 +200,19 @@ jobs:
           output: 'security-report.json'
 
       - name: Check for security advisories
+        id: security-check
         run: |
           # Check GitHub security advisories
           echo "Checking for security advisories..."
-          
+
           # Parse security report for high/critical vulnerabilities
           if [ -f security-report.json ]; then
             critical_count=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' security-report.json 2>/dev/null || echo "0")
             high_count=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' security-report.json 2>/dev/null || echo "0")
-            
+
             echo "Critical vulnerabilities: $critical_count"
             echo "High vulnerabilities: $high_count"
-            
+
             if [ "$critical_count" -gt 0 ] || [ "$high_count" -gt 0 ]; then
               echo "security_updates_required=true" >> $GITHUB_OUTPUT
             fi
@@ -272,9 +306,9 @@ jobs:
             - Automated dependency update for ${{ matrix.update_category }}
             - Update triggered by scheduled workflow
             - All tests passed
-            
+
             Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-            
+
             git push origin "$BRANCH_NAME"
           else
             echo "No changes to commit for ${{ matrix.update_category }}"
@@ -292,32 +326,32 @@ jobs:
               head: process.env.BRANCH_NAME,
               base: 'main',
               body: `## Dependency Updates - ${{ matrix.update_category }}
-              
+
               This PR contains automated updates for ${{ matrix.update_category }} dependencies.
-              
+
               ### Changes
               - 📦 Updated ${{ matrix.update_category }} components to latest versions
               - ✅ All validation tests passed
               - 🔍 Security scan completed
-              
+
               ### Update Type
               - **Type**: ${{ github.event.inputs.update_type || 'patch' }}
               - **Triggered by**: ${{ github.event_name == 'schedule' && 'Scheduled workflow' || 'Manual trigger' }}
-              
+
               ### Testing
               - [ ] Terraform validation passed
               - [ ] Puppet syntax check passed
               - [ ] Kubernetes manifest validation passed
               - [ ] Security scan completed
-              
+
               ### Deployment Notes
               Please review all changes carefully before merging. Consider deploying to development environment first.
-              
+
               ---
               🤖 This PR was created automatically by the dependency update workflow.`,
               draft: false
             });
-            
+
             // Add labels
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -340,21 +374,21 @@ jobs:
               repo: context.repo.repo,
               title: `🚨 URGENT: Security vulnerabilities detected`,
               body: `## Security Alert
-              
+
               Critical or high-severity vulnerabilities have been detected in the project dependencies.
-              
+
               ### Action Required
               - [ ] Review security scan results
               - [ ] Apply security patches immediately
               - [ ] Test in development environment
               - [ ] Deploy fixes to production
-              
+
               ### Scan Results
               See the latest security scan workflow for detailed vulnerability information.
-              
+
               ### Priority
               This issue has been marked as urgent due to security implications.
-              
+
               ---
               🔍 Generated by automated security scanning workflow`,
               labels: ['security', 'urgent', 'automated', 'bug'],
@@ -364,21 +398,24 @@ jobs:
   notify-updates:
     runs-on: ubuntu-latest
     needs: [check-terraform-updates, check-puppet-updates, check-helm-updates, check-container-updates, check-security-updates, create-update-prs]
-    if: always()
+    # Only run if SLACK_WEBHOOK secret is configured
+    if: always() && vars.ENABLE_SLACK_NOTIFICATIONS == 'true'
     steps:
       - name: Send update notification
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
           text: |
             📦 Dependency Update Report
-            
+
             Updates Available:
             - Terraform: ${{ needs.check-terraform-updates.outputs.terraform_updates_available || 'false' }}
             - Puppet: ${{ needs.check-puppet-updates.outputs.puppet_updates_available || 'false' }}
             - Helm: ${{ needs.check-helm-updates.outputs.helm_updates_available || 'false' }}
             - Containers: ${{ needs.check-container-updates.outputs.container_updates_available || 'false' }}
             - Security: ${{ needs.check-security-updates.outputs.security_updates_required || 'false' }}
-            
+
             Check the repository for new pull requests with dependency updates.
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
