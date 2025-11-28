@@ -35,6 +35,11 @@ env:
   BACKUP_RETENTION_DAYS: 30
   BACKUP_STORAGE_BUCKET: pi-cluster-backups
 
+# Required permissions for workflow operations
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   determine-operation:
     runs-on: ubuntu-latest
@@ -189,17 +194,31 @@ jobs:
       - name: Create configuration archive
         run: |
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          tar -czf config-backup-${TIMESTAMP}.tar.gz \
-            --exclude='.terraform' \
-            --exclude='*.log'
-            terraform/ \
-            puppet/ \
-            k8s/ \
-            inventory.yaml \
+
+          # Build list of files/directories that exist
+          FILES_TO_BACKUP=""
+          [ -d "terraform" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP terraform/"
+          [ -d "puppet" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP puppet/"
+          [ -d "k8s" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP k8s/"
+          [ -f "inventory.yaml" ] && FILES_TO_BACKUP="$FILES_TO_BACKUP inventory.yaml"
+
+          if [ -n "$FILES_TO_BACKUP" ]; then
+            echo "Creating backup archive with: $FILES_TO_BACKUP"
+            tar -czf "config-backup-${TIMESTAMP}.tar.gz" \
+              --exclude='.terraform' \
+              --exclude='*.log' \
+              --exclude='vendor' \
+              --exclude='node_modules' \
+              $FILES_TO_BACKUP
+            echo "Backup archive created successfully"
+            ls -lh "config-backup-${TIMESTAMP}.tar.gz"
+          else
+            echo "No files to backup - skipping archive creation"
+          fi
 
   cleanup-old-backups:
     runs-on: ubuntu-latest
-    needs: [backup-cluster-state, backup-configurations]
+    needs: [determine-operation, backup-cluster-state, backup-configurations]
     if: needs.determine-operation.outputs.operation == 'backup'
     steps:
       - name: Cleanup old backups
@@ -215,7 +234,7 @@ jobs:
 
   test-backup:
     runs-on: ubuntu-latest
-    needs: [backup-cluster-state, backup-configurations]
+    needs: [determine-operation, backup-cluster-state, backup-configurations]
     if: needs.determine-operation.outputs.operation == 'backup' && needs.determine-operation.outputs.backup_type == 'full'
     steps:
       - name: Validate backup completeness
@@ -298,8 +317,8 @@ jobs:
 
   notify-completion:
     runs-on: ubuntu-latest
-    needs: [backup-cluster-state, backup-configurations, cleanup-old-backups, test-backup]
-    if: always() && needs.determine-operation.outputs.operation == 'backup'
+    needs: [determine-operation, backup-cluster-state, backup-configurations, cleanup-old-backups]
+    if: always() && needs.determine-operation.outputs.operation == 'backup' && vars.ENABLE_SLACK_NOTIFICATIONS == 'true'
     steps:
       - name: Generate backup report
         run: |
@@ -336,25 +355,29 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
           text: |
             📋 Backup Report for ${{ needs.determine-operation.outputs.environment }}
             Type: ${{ needs.determine-operation.outputs.backup_type }}
             Status: ${{ job.status }}
             Time: $(date '+%Y-%m-%d %H:%M:%S')
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
   notify-restore:
     runs-on: ubuntu-latest
-    needs: [restore-cluster]
-    if: always() && needs.determine-operation.outputs.operation == 'restore'
+    needs: [determine-operation, restore-cluster]
+    if: always() && needs.determine-operation.outputs.operation == 'restore' && vars.ENABLE_SLACK_NOTIFICATIONS == 'true'
     steps:
       - name: Send restore notification
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
           text: |
             🔄 Disaster Recovery Completed
             Environment: ${{ needs.determine-operation.outputs.environment }}
             Restored from: ${{ github.event.inputs.restore_from }}
             Status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
