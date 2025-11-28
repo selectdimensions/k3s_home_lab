@@ -139,6 +139,7 @@ puppet/bolt-debug.log
 puppet/*.log
 puppet/log/
 puppet/.bolt/
+bolt-debug.log
 
 # Puppet modules installed via bolt
 puppet/modules/
@@ -401,3 +402,20 @@ temp/
 
 # OS generated files
 .Trashes
+
+# -------------------- Transient/Generated Files --------------------
+# Validation and deployment reports (regenerated on each run)
+validation-report-*.json
+deployment-readiness-*.json
+
+# Generated structure files
+project-structure.txt
+NUL
+
+# Debug and log files
+*.log
+!.github/**/*.log
+
+# Mermaid/diagram artifacts
+*.svg
+!docs/**/*.svg

@@ -289,9 +289,52 @@ After setup is complete:
 4. **Set up monitoring alerts** in Grafana
 5. **Create your first data pipeline** in NiFi
 
+## Windows-Specific Notes
+
+### PowerShell Script Execution
+
+```powershell
+# Enable script execution (run as Administrator)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### SSH Key Setup on Windows
+
+```powershell
+# Generate SSH key
+ssh-keygen -t ed25519 -C "your-email@example.com" -f "$env:USERPROFILE\.ssh\id_ed25519"
+
+# Start SSH agent
+Start-Service ssh-agent
+ssh-add "$env:USERPROFILE\.ssh\id_ed25519"
+
+# Copy key to Pi nodes
+type "$env:USERPROFILE\.ssh\id_ed25519.pub" | ssh hezekiah@192.168.0.120 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+```
+
+### Windows Troubleshooting
+
+**SSH Connection Failures:**
+```powershell
+# Test connectivity
+Test-NetConnection -ComputerName 192.168.0.120 -Port 22
+
+# Verify SSH works
+ssh -v hezekiah@192.168.0.120 "echo connected"
+```
+
+**Docker Desktop Issues:**
+```powershell
+# Restart Docker
+Restart-Service docker
+
+# Check Docker status
+docker info
+```
+
 ## Additional Resources
 
-- [Architecture Documentation](docs/architecture/)
-- [Puppet Setup Guide](docs/puppet-guides/)
-- [Runbooks](docs/runbooks/)
-- [Windows Setup Guide](docs/WINDOWS-SETUP.md)
+- [Architecture Diagram](./ARCHITECTURE-DIAGRAM.md)
+- [Automation Reference](./AUTOMATION.md)
+- [Runbooks](./runbooks/)
+- [Puppet Documentation](./PUPPET.md)
