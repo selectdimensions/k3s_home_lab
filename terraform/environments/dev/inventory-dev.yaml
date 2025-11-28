@@ -1,42 +1,39 @@
-"config":
-  "ssh":
-    "host-key-check": false
-    "private-key": "/home/boltuser/.ssh/pi_k3s_cluster_rsa"
-    "run-as": "root"
-    "user": "hezekiah"
-  "transport": "ssh"
-"groups":
-- "groups":
-  - "name": "masters"
-    "targets":
-    - "alias": "pi-master.cluster.local"
-      "name": "pi-master"
-      "uri": "192.168.0.120"
-      "vars":
-        "components":
-        - "puppet-server"
-        - "k3s-server"
-        - "nifi"
-        "k3s_role": "server"
-        "role": "master"
-    "vars":
-      "k3s_server_args": "--disable traefik --disable servicelb"
-  - "name": "workers"
-    "targets":
-    - "alias": "pi-worker-1.cluster.local"
-      "name": "pi-worker-1"
-      "uri": "192.168.0.121"
-      "vars":
-        "components":
-        - "k3s-agent"
-        - "trino"
-        "k3s_role": "agent"
-        "role": "worker"
-    "vars":
-      "k3s_agent_args": ""
-  "name": "cluster"
-  "vars":
-    "cluster_domain": "cluster.local"
-    "cluster_name": "pi-k3s-dev"
-    "environment": "dev"
-"version": 2
+version: 2
+config:
+  transport: ssh
+  ssh:
+    user: hezekiah
+    private-key: /home/boltuser/.ssh/pi_k3s_cluster_rsa
+    host-key-check: false
+    run-as: root
+
+groups:
+  - name: cluster
+    groups:
+      - name: masters
+        targets:
+          - uri: 192.168.0.120
+            name: pi-master
+            alias: pi-master.cluster.local
+            vars:
+              role: master
+              k3s_role: server
+              environment: dev
+        vars:
+          k3s_server_args: "--disable traefik --disable servicelb"
+
+      - name: workers
+        targets:
+          - uri: 192.168.0.121
+            name: pi-worker-1
+            alias: pi-worker-1.cluster.local
+            vars:
+              role: worker
+              k3s_role: agent
+              environment: dev
+        vars:
+          k3s_agent_args: ""
+    vars:
+      cluster_name: pi-k3s-dev
+      cluster_domain: cluster.local
+      environment: dev

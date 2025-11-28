@@ -39,7 +39,7 @@ plan pi_cluster_automation::deploy (
     out::message("Phase 2: Installing K3s on master nodes")
 
     # Install K3s on masters
-    run_command('curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.4+k3s1 sh -s - server --write-kubeconfig-mode 644 --disable traefik --disable servicelb', $masters)
+    run_command('curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 sh -s - server --write-kubeconfig-mode 644 --disable traefik --disable servicelb', $masters)
 
     # Wait for K3s to be ready
     out::message("Waiting for K3s server to be ready...")
@@ -49,18 +49,16 @@ plan pi_cluster_automation::deploy (
     if $workers.length > 0 {
       if $masters.length == 0 {
         fail("Cannot install workers without master nodes")
-      }
-
-      out::message("Getting K3s token for worker nodes")
+      }      out::message("Getting K3s token for worker nodes")
       $token_result = run_command('cat /var/lib/rancher/k3s/server/node-token', $masters[0])
-      $k3s_token = $token_result[$masters[0]]['stdout'].strip()
+      $k3s_token = $token_result.first.value['stdout'].strip()
       $master_ip = $masters[0].name
 
       # Phase 3: Install K3s on workers using commands
       out::message("Phase 3: Installing K3s on worker nodes")
 
       # Install K3s agent on workers
-      run_command("curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.4+k3s1 K3S_URL=https://${master_ip}:6443 K3S_TOKEN=${k3s_token} sh -s - agent", $workers)
+      run_command("curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 K3S_URL=https://${master_ip}:6443 K3S_TOKEN=${k3s_token} sh -s - agent", $workers)
     }
   }
 

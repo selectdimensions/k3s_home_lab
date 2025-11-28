@@ -1,50 +1,34 @@
 name: pi_cluster_automation
 
-# Module path configuration - order matters for precedence
+# Module path configuration
 modulepath:
   - site-modules
   - modules
   - ~/.puppetlabs/bolt/modules
 
-# Hiera configuration for data lookup
+# Hiera configuration
 hiera-config: hiera.yaml
 
-# Enhanced Bolt configuration for better performance and reliability
-bolt:
-  apply-settings:
-    show_diff: true
-    noop: false
+# Apply settings (corrected configuration)
+apply:
+  show_diff: true
 
-  # Connection settings
-  transport: ssh
+# Logging configuration (corrected configuration)
+log:
+  console:
+    level: info
+  ~/bolt-debug.log:
+    level: debug
 
-  # Logging configuration
-  log:
-    console:
-      level: info
-    file:
-      level: debug
-      path: bolt-debug.log
+# Plugin configuration (moved out of bolt: hierarchy)
+plugins:
+  pkcs7:
+    private-key: ~/.puppetlabs/bolt/keys/private_key.pkcs7.pem
+    public-key: ~/.puppetlabs/bolt/keys/public_key.pkcs7.pem
 
-  # Plugin configuration
-  plugins:
-    pkcs7:
-      private-key: ~/.puppetlabs/bolt/keys/private_key.pkcs7.pem
-      public-key: ~/.puppetlabs/bolt/keys/public_key.pkcs7.pem
-
-# Default configuration for all targets
-ssh:
-  host-key-check: false
-  user: hezekiah
-  run-as: root
-  connect-timeout: 30
-  tty: false
-  # Enhanced SSH options for Raspberry Pi connections
-  ssh-command: 'ssh -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no'
-
-# Analytics opt-out for better performance
-analytics: false
-
-# Concurrency settings optimized for Raspberry Pi cluster
+# Concurrency settings
 concurrency: 4
 compile-concurrency: 4
+
+# Analytics setting
+analytics: false

@@ -1,0 +1,60 @@
+# Velero Helm Chart Values Template
+image:
+  repository: velero/velero
+  tag: v1.12.1
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.8.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+configuration:
+  provider: aws
+  backupStorageLocation:
+    name: default
+    provider: aws
+    bucket: $${backup_storage_location}
+    config:
+      region: us-east-1
+      s3ForcePathStyle: "true"
+      s3Url: http://minio-api.data-platform.svc.cluster.local:9000
+
+  volumeSnapshotLocation:
+    name: default
+    provider: aws
+    config:
+      region: us-east-1
+
+  defaultBackupTTL: 720h
+
+credentials:
+  useSecret: true
+  name: cloud-credentials
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id = $${minio_access_key}
+      aws_secret_access_key = $${minio_secret_key}
+
+deployRestic: true
+upgradeCRDs: true

@@ -51,7 +51,7 @@ jobs:
           else
             echo "operation=backup" >> $GITHUB_OUTPUT
           fi
-          
+
           # Set backup type
           if [ "${{ github.event_name }}" == "schedule" ]; then
             if [ "${{ github.event.schedule }}" == "0 3 * * 0" ]; then
@@ -62,7 +62,7 @@ jobs:
           else
             echo "backup_type=${{ github.event.inputs.backup_type || 'incremental' }}" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "environment=${{ github.event.inputs.environment || 'prod' }}" >> $GITHUB_OUTPUT
 
   pre-backup-checks:
@@ -190,12 +190,12 @@ jobs:
         run: |
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           tar -czf config-backup-${TIMESTAMP}.tar.gz \
+            --exclude='.terraform' \
+            --exclude='*.log'
             terraform/ \
             puppet/ \
             k8s/ \
             inventory.yaml \
-            --exclude='.terraform' \
-            --exclude='*.log'
 
   cleanup-old-backups:
     runs-on: ubuntu-latest
@@ -306,13 +306,13 @@ jobs:
           TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
           cat > backup-report.md << EOF
           # Backup Report - ${TIMESTAMP}
-          
+
           ## Summary
           - **Environment**: ${{ needs.determine-operation.outputs.environment }}
           - **Backup Type**: ${{ needs.determine-operation.outputs.backup_type }}
           - **Status**: ${{ job.status }}
           - **Timestamp**: ${TIMESTAMP}
-          
+
           ## Components Backed Up
           - ✅ etcd snapshot
           - ✅ Kubernetes configurations
@@ -321,12 +321,12 @@ jobs:
           - ✅ Application data
           - ✅ Terraform state
           - ✅ Puppet configurations
-          
+
           ## Backup Verification
           - Integrity checks: Passed
           - Backup size: [Size information]
           - Storage location: ${{ env.BACKUP_STORAGE_BUCKET }}
-          
+
           ## Next Scheduled Backup
           - Daily incremental: Tomorrow 2:00 AM UTC
           - Weekly full: Next Sunday 3:00 AM UTC

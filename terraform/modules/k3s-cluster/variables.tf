@@ -14,7 +14,7 @@ variable "environment" {
 variable "k3s_version" {
   description = "K3s version to install"
   type        = string
-  default     = "v1.28.4+k3s1"
+  default     = "v1.32.5+k3s1"
 }
 
 variable "k3s_token" {

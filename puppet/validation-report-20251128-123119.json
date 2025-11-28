@@ -1,0 +1,187 @@
+{
+  "Environment": "dev",
+  "Summary": {
+    "WarningTests": 4,
+    "FailedTests": 20,
+    "TotalTests": 29,
+    "PassedTests": 5,
+    "SuccessRate": 17.2
+  },
+  "TestResults": [
+    {
+      "TestName": "PowerShell Version",
+      "Details": "Version 7.5.4",
+      "Timestamp": "2025-11-28T12:31:17.0888889-05:00",
+      "Status": "PASS"
+    },
+    {
+      "TestName": "Command: git",
+      "Details": "Available",
+      "Timestamp": "2025-11-28T12:31:17.0934395-05:00",
+      "Status": "PASS"
+    },
+    {
+      "TestName": "Command: terraform",
+      "Details": "Available",
+      "Timestamp": "2025-11-28T12:31:17.0961932-05:00",
+      "Status": "PASS"
+    },
+    {
+      "TestName": "Command: docker",
+      "Details": "Available",
+      "Timestamp": "2025-11-28T12:31:17.0995412-05:00",
+      "Status": "PASS"
+    },
+    {
+      "TestName": "Puppet Bolt",
+      "Details": "Not available or not working",
+      "Timestamp": "2025-11-28T12:31:17.1289127-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: terraform/environments/dev",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1308-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: terraform/environments/staging",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1314612-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: terraform/environments/prod",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1323463-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: terraform/modules",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1331799-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: puppet/plans",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.13429-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: puppet/tasks",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1349861-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: puppet/site-modules",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1356143-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: k8s/base",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1365976-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: k8s/overlays",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1375855-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Directory: .github/workflows",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1387225-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: Make.ps1",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1397655-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: inventory.yaml.example",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1406611-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: terraform/environments/dev/main.tf",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1412841-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: puppet/bolt-project.yaml",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1419395-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: puppet/Puppetfile",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1426129-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "File: .github/workflows/setup.yml",
+      "Details": "Missing",
+      "Timestamp": "2025-11-28T12:31:17.1432048-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Terraform Environment",
+      "Details": "Path terraform/environments/dev not found",
+      "Timestamp": "2025-11-28T12:31:17.1457553-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Puppet Testing",
+      "Details": "Exception: Cannot find path 'C:\\Users\\Jenkins\\Documents\\k3s_home_lab\\puppet\\puppet' because it does not exist.",
+      "Timestamp": "2025-11-28T12:31:17.1493837-05:00",
+      "Status": "FAIL"
+    },
+    {
+      "TestName": "Kubernetes YAML Syntax",
+      "Details": "All YAML files valid (0 files checked)",
+      "Timestamp": "2025-11-28T12:31:18.3499744-05:00",
+      "Status": "PASS"
+    },
+    {
+      "TestName": "Essential Workflow: ci-cd-main.yml",
+      "Details": "Workflow missing (optional but recommended)",
+      "Timestamp": "2025-11-28T12:31:19.4785304-05:00",
+      "Status": "WARN"
+    },
+    {
+      "TestName": "Essential Workflow: terraform-ci.yml",
+      "Details": "Workflow missing (optional but recommended)",
+      "Timestamp": "2025-11-28T12:31:19.4802518-05:00",
+      "Status": "WARN"
+    },
+    {
+      "TestName": "Essential Workflow: puppet-ci.yml",
+      "Details": "Workflow missing (optional but recommended)",
+      "Timestamp": "2025-11-28T12:31:19.4812796-05:00",
+      "Status": "WARN"
+    },
+    {
+      "TestName": "Essential Workflow: setup.yml",
+      "Details": "Workflow missing (optional but recommended)",
+      "Timestamp": "2025-11-28T12:31:19.4822233-05:00",
+      "Status": "WARN"
+    },
+    {
+      "TestName": "Make.ps1",
+      "Details": "Script not found",
+      "Timestamp": "2025-11-28T12:31:19.4850529-05:00",
+      "Status": "FAIL"
+    }
+  ],
+  "Timestamp": "2025-11-28T12:31:19.5500471-05:00"
+}

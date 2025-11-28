@@ -1,3 +1,4 @@
+# puppet\plans\deploy_robust.pp
 # Robust deployment plan for Pi cluster with apt lock handling
 plan pi_cluster_automation::deploy_robust (
   TargetSpec $targets,
@@ -52,7 +53,7 @@ plan pi_cluster_automation::deploy_robust (
     out::message("Phase 2: Installing K3s on master nodes")
 
     # Install K3s on masters
-    run_command('curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.4+k3s1 sh -s - server --write-kubeconfig-mode 644 --disable traefik --disable servicelb', $masters, '_catch_errors' => true)
+    run_command('curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 sh -s - server --write-kubeconfig-mode 644 --disable traefik --disable servicelb', $masters, '_catch_errors' => true)
 
     # Wait for K3s to be ready
     out::message("Waiting for K3s server to be ready...")
@@ -62,11 +63,9 @@ plan pi_cluster_automation::deploy_robust (
     if $workers.size > 0 {
       if $masters.size == 0 {
         fail("Cannot install workers without master nodes")
-      }
-
-      out::message("Getting K3s token for worker nodes")
+      }      out::message("Getting K3s token for worker nodes")
       $token_result = run_command('cat /var/lib/rancher/k3s/server/node-token', $masters[0], '_catch_errors' => true)
-      $k3s_token = $token_result[$masters[0]]['stdout'].strip()
+      $k3s_token = $token_result.first.value['stdout'].strip()
       $master_ip = $masters[0].name
 
       # Phase 3: Install K3s on workers
@@ -75,7 +74,7 @@ plan pi_cluster_automation::deploy_robust (
       # Install K3s agent on workers sequentially to avoid conflicts
       $workers.each |$worker| {
         out::message("Installing K3s agent on ${worker.name}")
-        run_command("curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.4+k3s1 K3S_URL=https://${master_ip}:6443 K3S_TOKEN=${k3s_token} sh -s - agent", [$worker], '_catch_errors' => true)
+        run_command("curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 K3S_URL=https://${master_ip}:6443 K3S_TOKEN=${k3s_token} sh -s - agent", [$worker], '_catch_errors' => true)
       }
     }
   }

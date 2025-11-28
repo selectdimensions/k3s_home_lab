@@ -1,0 +1,397 @@
+{
+  "Timestamp": "2025-11-28T12:41:48.1215045-05:00",
+  "Summary": {
+    "TotalTests": 64,
+    "PassedTests": 43,
+    "WarningTests": 1,
+    "FailedTests": 20,
+    "SuccessRate": 67.2
+  },
+  "Environment": "dev",
+  "TestResults": [
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3492219-05:00",
+      "TestName": "PowerShell Version",
+      "Details": "Version 7.5.4"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3528183-05:00",
+      "TestName": "Command: git",
+      "Details": "Available"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3552567-05:00",
+      "TestName": "Command: terraform",
+      "Details": "Available"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3583975-05:00",
+      "TestName": "Command: docker",
+      "Details": "Available"
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:22.3802155-05:00",
+      "TestName": "Puppet Bolt",
+      "Details": "Not available or not working"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3825551-05:00",
+      "TestName": "Directory: terraform/environments/dev",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3835837-05:00",
+      "TestName": "Directory: terraform/environments/staging",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3845448-05:00",
+      "TestName": "Directory: terraform/environments/prod",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3854273-05:00",
+      "TestName": "Directory: terraform/modules",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3863497-05:00",
+      "TestName": "Directory: puppet/plans",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3870129-05:00",
+      "TestName": "Directory: puppet/tasks",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3876537-05:00",
+      "TestName": "Directory: puppet/site-modules",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3884821-05:00",
+      "TestName": "Directory: k8s/base",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3892219-05:00",
+      "TestName": "Directory: k8s/overlays",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3898784-05:00",
+      "TestName": "Directory: .github/workflows",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3903488-05:00",
+      "TestName": "File: Make.ps1",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3907501-05:00",
+      "TestName": "File: inventory.yaml.example",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3911771-05:00",
+      "TestName": "File: terraform/environments/dev/main.tf",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3915865-05:00",
+      "TestName": "File: puppet/bolt-project.yaml",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3919854-05:00",
+      "TestName": "File: puppet/Puppetfile",
+      "Details": "Exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:22.3924844-05:00",
+      "TestName": "File: .github/workflows/setup.yml",
+      "Details": "Exists"
+    },
+    {
+      "Status": "WARN",
+      "Timestamp": "2025-11-28T12:41:30.9153234-05:00",
+      "TestName": "Terraform Format",
+      "Details": "Code formatting issues found"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:32.5896541-05:00",
+      "TestName": "Terraform Init",
+      "Details": "Initialization successful"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:33.5769901-05:00",
+      "TestName": "Terraform Validate",
+      "Details": "Configuration is valid"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:34.1456021-05:00",
+      "TestName": "Terraform Plan",
+      "Details": "Plan successful (changes detected)"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:34.148909-05:00",
+      "TestName": "Puppetfile",
+      "Details": "File exists"
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:34.1610404-05:00",
+      "TestName": "Bolt Project Config",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.4743655-05:00",
+      "TestName": "Puppet Syntax",
+      "Details": "6 syntax errors found"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.475259-05:00",
+      "TestName": "Puppet Plan: deploy_simple.pp",
+      "Details": "Plan exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4756781-05:00",
+      "TestName": "Puppet Plan: k3s_deploy.pp",
+      "Details": "Plan exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4760832-05:00",
+      "TestName": "Puppet Plan: deploy.pp",
+      "Details": "Plan exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4765639-05:00",
+      "TestName": "Puppet Task: check_k3s_prereqs",
+      "Details": "Task complete (JSON + script)"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4770854-05:00",
+      "TestName": "Puppet Task: install_k3s_master",
+      "Details": "Task complete (JSON + script)"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4777733-05:00",
+      "TestName": "Puppet Task: install_k3s_worker",
+      "Details": "Task complete (JSON + script)"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.4782809-05:00",
+      "TestName": "Puppet Task: cluster_status",
+      "Details": "Task complete (JSON + script)"
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.5725514-05:00",
+      "TestName": "Kubernetes YAML Syntax",
+      "Details": "8 YAML syntax errors found"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.6682247-05:00",
+      "TestName": "Kustomization: base",
+      "Details": "Kustomize builds successfully"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:47.7508163-05:00",
+      "TestName": "Kustomization: dev",
+      "Details": "Kustomize builds successfully"
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8355385-05:00",
+      "TestName": "Kustomization: prod",
+      "Details": "Kustomize failed: # Warning: 'bases' is deprecated. Please use 'resources' instead. Run 'kustomize edit fix' to update your Kustomization automatically. # Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to update your Kustomization automatically. error: loading KV pairs: env source files: [config/prod.env]: evalsymlink failure on 'C:\\Users\\Jenkins\\Documents\\k3s_home_lab\\k8s\\overlays\\prod\\config\\prod.env' : CreateFile C:\\Users\\Jenkins\\Documents\\k3s_home_lab\\k8s\\overlays\\prod\\config: The system cannot find the file specified."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8488395-05:00",
+      "TestName": "Helm Values: minio-values.yaml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8600112-05:00",
+      "TestName": "Helm Values: nifi-values.yaml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8710913-05:00",
+      "TestName": "Helm Values: postgresql-values.yaml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8827129-05:00",
+      "TestName": "Helm Values: trino-values.yaml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.8951545-05:00",
+      "TestName": "Workflow: backup-dr.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9057914-05:00",
+      "TestName": "Workflow: ci-cd-main.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9165422-05:00",
+      "TestName": "Workflow: dependency-updates.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9274361-05:00",
+      "TestName": "Workflow: k8s-apps-cd.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9425959-05:00",
+      "TestName": "Workflow: puppet-ci.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9590549-05:00",
+      "TestName": "Workflow: release.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9730246-05:00",
+      "TestName": "Workflow: security-scan.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.98581-05:00",
+      "TestName": "Workflow: setup.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:47.9973969-05:00",
+      "TestName": "Workflow: terraform-ci.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:48.0102091-05:00",
+      "TestName": "Workflow: validation.yml",
+      "Details": "Invalid YAML: The term 'ConvertFrom-Yaml' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0116891-05:00",
+      "TestName": "Essential Workflow: ci-cd-main.yml",
+      "Details": "Workflow exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0122981-05:00",
+      "TestName": "Essential Workflow: terraform-ci.yml",
+      "Details": "Workflow exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0131188-05:00",
+      "TestName": "Essential Workflow: puppet-ci.yml",
+      "Details": "Workflow exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0138183-05:00",
+      "TestName": "Essential Workflow: setup.yml",
+      "Details": "Workflow exists"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0492698-05:00",
+      "TestName": "Make.ps1 Syntax",
+      "Details": "PowerShell syntax valid"
+    },
+    {
+      "Status": "FAIL",
+      "Timestamp": "2025-11-28T12:41:48.0947148-05:00",
+      "TestName": "Make.ps1 Help",
+      "Details": "Help command doesn't show expected output"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0976612-05:00",
+      "TestName": "Make.ps1 Command: terraform-init",
+      "Details": "Command implemented"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0981506-05:00",
+      "TestName": "Make.ps1 Command: terraform-plan",
+      "Details": "Command implemented"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0985805-05:00",
+      "TestName": "Make.ps1 Command: terraform-apply",
+      "Details": "Command implemented"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.0989004-05:00",
+      "TestName": "Make.ps1 Command: puppet-deploy",
+      "Details": "Command implemented"
+    },
+    {
+      "Status": "PASS",
+      "Timestamp": "2025-11-28T12:41:48.099257-05:00",
+      "TestName": "Make.ps1 Command: quick-deploy",
+      "Details": "Command implemented"
+    }
+  ]
+}

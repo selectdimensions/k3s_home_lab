@@ -95,7 +95,7 @@ foreach ($workerIP in $WorkerIPs) {
 
     # Install/reinstall K3s agent
     Write-Host "   📦 Installing K3s agent" -ForegroundColor Yellow
-    $installCmd = "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.4+k3s1 K3S_URL=https://$MasterIP:6443 K3S_TOKEN=$k3sToken sh -s - agent --node-name `$(hostname) --node-ip $workerIP"
+    $installCmd = "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.5+k3s1 K3S_URL=https://$MasterIP:6443 K3S_TOKEN=$k3sToken sh -s - agent --node-name `$(hostname) --node-ip $workerIP"
 
     $installResult = Invoke-SSHCommand -HostIP $workerIP -Command $installCmd -Description "Installing K3s agent"
 

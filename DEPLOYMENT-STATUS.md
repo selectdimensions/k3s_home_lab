@@ -1,26 +1,49 @@
 # 🎯 Pi K3s Home Lab - Deployment Status
 
-## 🚀 INFRASTRUCTURE FULLY OPERATIONAL
+## ⚠️ CRITICAL ISSUE DETECTED - VERSION SKEW
 
-**Date**: June 16, 2025
-**Status**: 🟢 **100% OPERATIONAL** - Enterprise data platform fully deployed
-**Environment**: Development
+**Date**: November 28, 2025
+**Status**: 🔴 **REQUIRES ATTENTION** - Version skew preventing worker utilization
+**Environment**: Production
 
 ---
 
-## 🏆 DEPLOYMENT COMPLETE - ALL SYSTEMS OPERATIONAL
+## 🚨 CRITICAL FINDINGS (Nov 28, 2025)
 
-### ✅ **Complete Make.ps1 Command Testing**
-- ✅ All 26 commands tested and validated
-- ✅ Infrastructure automation 100% functional
-- ✅ Fixed Grafana and NiFi service references
-- ✅ One-command deployment pipeline working
+### ⚠️ **Version Skew Issue - ROOT CAUSE IDENTIFIED**
+- 🔴 **Master Node**: pi-master running K3s v1.28.4+k3s1 (June 2023)
+- 🔴 **Worker Nodes**: pi-worker-1/2 running K3s v1.32.5+k3s1 (Dec 2024)
+- 🔴 **Gap**: 4 minor versions - VIOLATES Kubernetes version skew policy
+- 🔴 **Impact**: Worker pods failing with CreateContainerConfigError
+- 🔴 **Result**: All workloads concentrated on master node only
 
-### ✅ **K3s Cluster Fully Deployed**
+### 📊 **Current Cluster State**
+- ✅ **Nodes Status**: 3/3 nodes showing Ready (but workers non-functional)
+- 🔴 **Pod Distribution**: 11/11 pods on master, 0 functional pods on workers
+- 🔴 **Worker Issues**: node-exporter pods in CreateContainerConfigError state
+- ⚠️ **DNS Warnings**: Nameserver limits exceeded on all nodes
+- ✅ **Master Health**: All services operational on master node
+- 🔴 **Worker Health**: Unable to schedule workloads due to version incompatibility
+
+### 🎯 **Resolution Required**
+**SEE**: `WORKER-NODE-ANALYSIS.md` for detailed analysis and action plan
+
+**Options**:
+1. **Upgrade master to v1.32.5** (RECOMMENDED) - matches workers, gets latest features
+2. **Downgrade workers to v1.28.4** - preserves master, runs older version
+3. **Fresh deployment** - clean slate with consistent versions
+
+**Estimated Time**: 2-3 hours for master upgrade + validation
+
+---
+
+## 🏆 PREVIOUS DEPLOYMENT STATUS (June 2025)
+
+### ✅ **K3s Cluster Initially Deployed**
 - ✅ **Master Node**: pi-master (192.168.0.120) running K3s v1.28.4+k3s1
-- ✅ **Worker Nodes**: pi-worker-1/2/3 accessible via Puppet Bolt
-- ✅ **Uptime**: 23+ hours continuous operation
-- ✅ **Pod Status**: 11/11 pods running (100% healthy)
+- ⚠️ **Worker Nodes**: pi-worker-1/2 later upgraded to v1.32.5 (causing current issues)
+- ✅ **Initial Uptime**: 23+ hours continuous operation
+- ⚠️ **Pod Status**: Was 11/11, now all on master only
 
 ### ✅ **Complete Data Platform Operational**
 - ✅ **NiFi**: data-engineering namespace (port 8080/8443) - admin/nifi123456789!

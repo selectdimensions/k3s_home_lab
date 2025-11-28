@@ -74,7 +74,7 @@ module "k3s_cluster" {
 
   # Dev-specific K3s settings
   disable_components = ["traefik"] # We'll use our own ingress
-  k3s_version        = "v1.28.4+k3s1"
+  k3s_version        = "v1.32.5+k3s1"
 
   # Infrastructure settings
   ssh_user             = var.node_ssh_user

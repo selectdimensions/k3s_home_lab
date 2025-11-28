@@ -6,6 +6,11 @@ config:
     private-key: /home/boltuser/.ssh/pi_k3s_cluster_rsa
     host-key-check: false
     run-as: root
+    # Enhanced SSH configuration for better security and reliability
+    connect-timeout: 30
+    disconnect-timeout: 5
+    tty: false
+    load-config: false
 
 groups:
   - name: cluster
@@ -21,8 +26,9 @@ groups:
               node_labels:
                 "node-role.kubernetes.io/master": "true"
                 "node-type": "raspberry-pi"
+                "cluster.local/control-plane": "true"
         vars:
-          k3s_server_args: "--disable traefik --disable servicelb"
+          k3s_server_args: "--disable traefik --disable servicelb --write-kubeconfig-mode 644"
 
       - name: workers
         targets:
@@ -36,6 +42,7 @@ groups:
                 "node-role.kubernetes.io/worker": "true"
                 "node-type": "raspberry-pi"
                 "workload-type": "general"
+                "cluster.local/compute": "true"
           - uri: 192.168.0.122
             name: pi-worker-2
             alias: pi-worker-2.cluster.local
@@ -46,6 +53,7 @@ groups:
                 "node-role.kubernetes.io/worker": "true"
                 "node-type": "raspberry-pi"
                 "workload-type": "data"
+                "cluster.local/storage": "true"
           - uri: 192.168.0.123
             name: pi-worker-3
             alias: pi-worker-3.cluster.local
@@ -56,8 +64,20 @@ groups:
                 "node-role.kubernetes.io/worker": "true"
                 "node-type": "raspberry-pi"
                 "workload-type": "general"
+                "cluster.local/compute": "true"
         vars:
           k3s_agent_args: ""
+          # Pre-flight commands to ensure clean state
+          pre_commands:
+            - "systemctl stop apt-daily.service apt-daily.timer apt-daily-upgrade.service apt-daily-upgrade.timer"
+            - "pkill -f apt || true"
+            - "rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* || true"
+
     vars:
       cluster_name: pi-k3s-cluster
       cluster_domain: cluster.local
+      environment: "{{ env.CLUSTER_ENV | default('prod') }}"
+      # Enhanced configuration for better reliability
+      ssh_common_args: "-o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=3"
+      apt_lock_timeout: 300
+      deployment_timeout: 1800
