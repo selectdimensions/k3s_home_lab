@@ -107,11 +107,16 @@ terraform.rc
 
 # -------------------- Kubernetes --------------------
 # Kubeconfig files (may contain sensitive credentials)
-kubeconfig*
-.kubeconfig*
-config
+# Note: Using specific patterns to avoid ignoring .tpl templates
+**/kubeconfig
+**/kubeconfig.yaml
+**/kubeconfig.yml
+**/kubeconfig-*
+**/.kubeconfig*
+**/config
+!**/config/
 *.kubeconfig
-kube-config*
+**/kube-config*
 
 # Helm
 charts/*.tgz
