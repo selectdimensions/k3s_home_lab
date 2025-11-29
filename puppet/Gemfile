@@ -2,8 +2,19 @@
 
 source 'https://rubygems.org'
 
-gem 'metadata-json-lint'
+# Core Puppet gems
 gem 'puppet'
 gem 'puppet-strings'
 gem 'puppetlabs_spec_helper'
+
+# Linting and validation
+gem 'metadata-json-lint'
+gem 'puppet-lint'
+gem 'puppet-syntax'
+
+# Testing
+gem 'rspec-puppet'
+gem 'rspec-puppet-facts'
+
+# Build tools
 gem 'rake', '~> 13.0'
