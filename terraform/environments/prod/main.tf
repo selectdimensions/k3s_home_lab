@@ -33,8 +33,8 @@ locals {
   # Node configuration
   nodes = {
     pi-master = {
-      ip   = "192.168.0.120"
-      role = "master"
+      ip         = "192.168.0.120"
+      role       = "master"
       components = ["puppet-server", "k3s-server", "vault", "cert-manager"]
       labels = {
         "node-role.kubernetes.io/control-plane" = "true"
@@ -42,8 +42,8 @@ locals {
       }
     }
     pi-worker-1 = {
-      ip   = "192.168.0.121"
-      role = "worker"
+      ip         = "192.168.0.121"
+      role       = "worker"
       components = ["k3s-agent", "trino", "monitoring"]
       labels = {
         "pi-cluster/workload" = "compute"
@@ -51,8 +51,8 @@ locals {
       }
     }
     pi-worker-2 = {
-      ip   = "192.168.0.122"
-      role = "worker"
+      ip         = "192.168.0.122"
+      role       = "worker"
       components = ["k3s-agent", "postgresql", "nifi"]
       labels = {
         "pi-cluster/workload" = "data"
@@ -60,8 +60,8 @@ locals {
       }
     }
     pi-worker-3 = {
-      ip   = "192.168.0.123"
-      role = "worker"
+      ip         = "192.168.0.123"
+      role       = "worker"
       components = ["k3s-agent", "minio", "backup"]
       labels = {
         "pi-cluster/workload" = "storage"

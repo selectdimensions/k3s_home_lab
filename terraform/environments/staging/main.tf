@@ -143,8 +143,8 @@ module "monitoring" {
 module "security" {
   source = "../../modules/security"
 
-  environment  = local.environment
-  vault_token  = random_password.vault_token.result
+  environment = local.environment
+  vault_token = random_password.vault_token.result
 
   depends_on = [module.k3s_cluster]
 }
@@ -172,7 +172,7 @@ resource "local_file" "kubeconfig_placeholder" {
     clusters = [{
       name = "pi-k3s-${local.environment}"
       cluster = {
-        server                   = "https://192.168.0.120:6443"
+        server                     = "https://192.168.0.120:6443"
         "insecure-skip-tls-verify" = true
       }
     }]
