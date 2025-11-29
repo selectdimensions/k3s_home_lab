@@ -87,19 +87,11 @@ module "puppet_infrastructure" {
 module "k3s_cluster" {
   source = "../../modules/k3s-cluster"
 
-  environment     = local.environment
-  cluster_name    = local.cluster_name
-  nodes           = local.nodes
-  resource_limits = local.resource_limits
-
-  k3s_config = {
-    disable_components = ["traefik"]
-    feature_gates = {
-      "ServerSideApply"     = true
-      "EphemeralContainers" = true
-    }
-    kubelet_args = ["--max-pods=110"]
-  }
+  environment        = local.environment
+  cluster_name       = local.cluster_name
+  nodes              = local.nodes
+  resource_limits    = local.resource_limits
+  disable_components = ["traefik"]
 
   depends_on = [module.puppet_infrastructure]
 }
@@ -108,39 +100,13 @@ module "k3s_cluster" {
 module "data_platform" {
   source = "../../modules/data-platform"
 
-  environment = local.environment
-  namespace   = "data-platform"
-
-  components = {
-    nifi = {
-      enabled  = true
-      replicas = 1
-      resources = {
-        requests = { cpu = "500m", memory = "1Gi" }
-        limits   = { cpu = "2", memory = "4Gi" }
-      }
-      admin_password = random_password.nifi_admin_password.result
-    }
-    trino = {
-      enabled              = true
-      coordinator_replicas = 1
-      worker_replicas      = 2
-      resources = {
-        requests = { cpu = "500m", memory = "1Gi" }
-        limits   = { cpu = "2", memory = "4Gi" }
-      }
-    }
-    postgresql = {
-      enabled      = true
-      storage_size = "20Gi"
-      password     = random_password.postgres_password.result
-    }
-    minio = {
-      enabled      = true
-      storage_size = "50Gi"
-      secret_key   = random_password.vault_token.result
-    }
-  }
+  cluster_name         = local.cluster_name
+  environment          = local.environment
+  namespace            = "data-platform"
+  postgres_password    = random_password.postgres_password.result
+  minio_secret_key     = random_password.vault_token.result
+  nifi_admin_password  = random_password.nifi_admin_password.result
+  trino_admin_password = random_password.nifi_admin_password.result # Reuse for staging
 
   depends_on = [module.k3s_cluster]
 }
@@ -166,12 +132,7 @@ module "monitoring" {
       enabled = true
     }
     alertmanager = {
-      enabled       = true
-      slack_webhook = var.slack_webhook
-    }
-    elk_stack = {
-      enabled               = true
-      elasticsearch_storage = "20Gi"
+      enabled = true
     }
   }
 
@@ -182,22 +143,8 @@ module "monitoring" {
 module "security" {
   source = "../../modules/security"
 
-  environment = local.environment
-
-  vault_config = {
-    enabled    = true
-    root_token = random_password.vault_token.result
-  }
-
-  cert_manager_config = {
-    enabled = true
-    email   = var.letsencrypt_email
-  }
-
-  oauth2_proxy_config = {
-    enabled    = true
-    github_org = var.github_org
-  }
+  environment  = local.environment
+  vault_token  = random_password.vault_token.result
 
   depends_on = [module.k3s_cluster]
 }
@@ -206,13 +153,12 @@ module "security" {
 module "backup" {
   source = "../../modules/backup"
 
-  environment = local.environment
-
-  backup_config = {
-    schedule         = "0 2 * * *" # Daily at 2 AM
-    retention        = "7d"
-    storage_location = var.backup_storage_location
-  }
+  cluster_name            = local.cluster_name
+  environment             = local.environment
+  backup_schedule         = "0 2 * * *" # Daily at 2 AM
+  backup_retention        = 7
+  backup_storage_location = var.backup_storage_location
+  minio_secret_key        = random_password.postgres_password.result # Reuse password for staging
 
   depends_on = [module.data_platform]
 }
@@ -233,9 +179,9 @@ resource "local_file" "staging_inventory" {
   filename = "${path.root}/inventory-staging.yaml"
 }
 
-# Store secrets securely
+# Store secrets in local file (simplified - no template dependency)
 resource "local_sensitive_file" "staging_secrets" {
-  content = templatefile("${path.module}/../../templates/secrets.yaml.tpl", {
+  content = yamlencode({
     postgres_password   = random_password.postgres_password.result
     vault_token         = random_password.vault_token.result
     nifi_admin_password = random_password.nifi_admin_password.result

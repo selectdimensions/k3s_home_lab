@@ -3,10 +3,9 @@
 output "cluster_info" {
   description = "K3s cluster information"
   value = {
-    name            = module.k3s_cluster.cluster_name
-    environment     = local.environment
-    master_ip       = local.nodes["pi-master"].ip
-    kubeconfig_path = local_file.kubeconfig.filename
+    name        = local.cluster_name
+    environment = local.environment
+    master_ip   = local.nodes["pi-master"].ip
   }
 }
 
@@ -21,14 +20,15 @@ output "nodes" {
   }
 }
 
-output "service_urls" {
-  description = "Service URLs for staging environment"
+output "service_endpoints" {
+  description = "Service endpoints for staging environment"
   value = {
-    nifi    = module.data_platform.nifi_url
-    grafana = module.monitoring.grafana_url
-    trino   = module.data_platform.trino_url
-    vault   = module.security.vault_url
-    minio   = module.data_platform.minio_url
+    nifi       = module.data_platform.nifi_endpoint
+    trino      = module.data_platform.trino_endpoint
+    postgresql = module.data_platform.postgresql_endpoint
+    minio      = module.data_platform.minio_endpoint
+    grafana    = module.monitoring.grafana_endpoint
+    prometheus = module.monitoring.prometheus_endpoint
   }
 }
 
@@ -43,17 +43,6 @@ output "credentials" {
   }
 }
 
-output "monitoring_endpoints" {
-  description = "Monitoring and observability endpoints"
-  value = {
-    prometheus    = module.monitoring.prometheus_url
-    grafana       = module.monitoring.grafana_url
-    alertmanager  = module.monitoring.alertmanager_url
-    elasticsearch = module.monitoring.elasticsearch_url
-    kibana        = module.monitoring.kibana_url
-  }
-}
-
 output "puppet_inventory" {
   description = "Generated Puppet inventory file path"
   value       = local_file.staging_inventory.filename
@@ -64,37 +53,19 @@ output "secrets_file" {
   value       = local_sensitive_file.staging_secrets.filename
 }
 
-output "kubeconfig_command" {
-  description = "Command to use the generated kubeconfig"
-  value       = "export KUBECONFIG=${local_file.kubeconfig.filename}"
-}
-
 output "deployment_commands" {
   description = "Commands to deploy staging environment"
   value       = <<-EOT
     Staging environment configured! Deployment commands:
-    
-    1. Export kubeconfig:
-       export KUBECONFIG=${local_file.kubeconfig.filename}
-    
-    2. Deploy with Puppet:
-       cd ../../..
-       .\Make.ps1 puppet-deploy -Environment staging -Targets all
-    
-    3. Deploy data platform:
-       .\Make.ps1 deploy-data-platform -Environment staging
-    
-    4. Check cluster status:
-       kubectl get nodes
-       kubectl get pods -A
-    
-    5. Access services:
-       - NiFi: ${module.data_platform.nifi_url}
-       - Grafana: ${module.monitoring.grafana_url}
-       - Trino: ${module.data_platform.trino_url}
-       - Vault: ${module.security.vault_url}
-    
-    6. View secrets:
-       cat ${local_sensitive_file.staging_secrets.filename}
+
+    1. Deploy with Puppet:
+       cd puppet
+       bolt plan run deploy_simple environment=staging
+
+    2. Deploy data platform via Make.ps1:
+       .\Make.ps1 quick-deploy -Environment staging
+
+    3. Check cluster status:
+       .\Make.ps1 cluster-status
   EOT
 }
