@@ -25,7 +25,7 @@ $KUBECTL_CMD create namespace $PT_namespace --dry-run=client -o yaml | $KUBECTL_
 # Function to deploy MinIO (S3-compatible storage)
 deploy_minio() {
     echo "🗃️  Deploying MinIO..."
-    
+
     # Create MinIO credentials secret
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -38,7 +38,7 @@ stringData:
   MINIO_ROOT_USER: "admin"
   MINIO_ROOT_PASSWORD: "minio123!"
 EOF
-    
+
     # Create MinIO PVC
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -54,7 +54,7 @@ spec:
     requests:
       storage: $PT_data_size
 EOF
-    
+
     # Create MinIO Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -116,14 +116,16 @@ spec:
         persistentVolumeClaim:
           claimName: minio-pvc
 EOF
-    
-    # Create MinIO Services
+
+    # Create MinIO Services with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: minio-api
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.203"
 spec:
   selector:
     app: minio
@@ -131,21 +133,12 @@ spec:
     - protocol: TCP
       port: 9000
       targetPort: 9000
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio-console
-  namespace: $PT_namespace
-spec:
-  selector:
-    app: minio
-  ports:
+      name: api
     - protocol: TCP
       port: 9001
       targetPort: 9001
-  type: ClusterIP
+      name: console
+  type: LoadBalancer
 EOF
 
     echo "✅ MinIO deployed"
@@ -154,7 +147,7 @@ EOF
 # Function to deploy PostgreSQL
 deploy_postgresql() {
     echo "🐘 Deploying PostgreSQL..."
-    
+
     # Create PostgreSQL credentials secret
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -168,7 +161,7 @@ stringData:
   POSTGRES_PASSWORD: "postgres123!"
   POSTGRES_DB: "dataengineering"
 EOF
-    
+
     # Create PostgreSQL PVC
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -184,7 +177,7 @@ spec:
     requests:
       storage: $PT_data_size
 EOF
-    
+
     # Create PostgreSQL Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -249,14 +242,16 @@ spec:
         persistentVolumeClaim:
           claimName: postgresql-pvc
 EOF
-    
-    # Create PostgreSQL Service
+
+    # Create PostgreSQL Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: postgresql
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.204"
 spec:
   selector:
     app: postgresql
@@ -264,7 +259,7 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ PostgreSQL deployed"
@@ -273,7 +268,7 @@ EOF
 # Function to deploy Apache NiFi
 deploy_nifi() {
     echo "🌊 Deploying Apache NiFi..."
-    
+
     # Create NiFi PVC
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -289,7 +284,7 @@ spec:
     requests:
       storage: $PT_data_size
 EOF
-    
+
     # Create NiFi Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -356,14 +351,16 @@ spec:
         persistentVolumeClaim:
           claimName: nifi-pvc
 EOF
-    
-    # Create NiFi Service
+
+    # Create NiFi Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: nifi
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.200"
 spec:
   selector:
     app: nifi
@@ -376,7 +373,7 @@ spec:
       port: 8443
       targetPort: 8443
       name: https
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ NiFi deployed"
@@ -385,7 +382,7 @@ EOF
 # Function to deploy Trino (SQL query engine)
 deploy_trino() {
     echo "⚡ Deploying Trino..."
-    
+
     # Create Trino ConfigMap
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -402,12 +399,12 @@ data:
     query.max-memory-per-node=1GB
     discovery-server.enabled=true
     discovery.uri=http://localhost:8080
-  
+
   node.properties: |
     node.environment=production
     node.id=ffffffff-ffff-ffff-ffff-ffffffffffff
     node.data-dir=/data/trino
-  
+
   jvm.config: |
     -server
     -Xmx2G
@@ -418,16 +415,16 @@ data:
     -XX:+HeapDumpOnOutOfMemoryError
     -XX:+ExitOnOutOfMemoryError
     -Djdk.attach.allowAttachSelf=true
-  
+
   log.properties: |
     io.trino=INFO
-  
+
   catalog-postgresql.properties: |
     connector.name=postgresql
     connection-url=jdbc:postgresql://postgresql:5432/dataengineering
     connection-user=dataeng
     connection-password=postgres123!
-  
+
   catalog-minio.properties: |
     connector.name=hive-hadoop2
     hive.metastore.uri=thrift://localhost:9083
@@ -437,7 +434,7 @@ data:
     hive.s3.path-style-access=true
     hive.s3.ssl.enabled=false
 EOF
-    
+
     # Create Trino Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -491,14 +488,16 @@ spec:
       - name: trino-data
         emptyDir: {}
 EOF
-    
-    # Create Trino Service
+
+    # Create Trino Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: trino
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.202"
 spec:
   selector:
     app: trino
@@ -506,7 +505,7 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ Trino deployed"
@@ -553,8 +552,15 @@ echo "📊 Services:"
 $KUBECTL_CMD get services -n $PT_namespace
 
 echo ""
-echo "🌐 Access URLs (use kubectl port-forward):"
-echo "  MinIO Console: kubectl port-forward svc/minio-console 9001:9001 -n $PT_namespace"
+echo "🌐 Direct Access URLs (via MetalLB LoadBalancer):"
+echo "  NiFi:          http://192.168.0.200:8080"
+echo "  Trino:         http://192.168.0.202:8080"
+echo "  MinIO Console: http://192.168.0.203:9001"
+echo "  MinIO API:     http://192.168.0.203:9000"
+echo "  PostgreSQL:    psql -h 192.168.0.204 -U dataeng -d dataengineering"
+echo ""
+echo "🔄 Port-forward alternative (if LoadBalancer not available):"
+echo "  MinIO Console: kubectl port-forward svc/minio-api 9001:9001 -n $PT_namespace"
 echo "  MinIO API: kubectl port-forward svc/minio-api 9000:9000 -n $PT_namespace"
 echo "  NiFi: kubectl port-forward svc/nifi 8080:8080 -n $PT_namespace"
 echo "  Trino: kubectl port-forward svc/trino 8080:8080 -n $PT_namespace"

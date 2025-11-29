@@ -22,14 +22,14 @@ is_master_node() {
 # Function to update system packages
 update_packages() {
     echo "📦 Updating system packages..."
-    
+
     # Update package cache
     apt-get update
-    
+
     # Show available upgrades
     echo "Available upgrades:"
     apt list --upgradable 2>/dev/null || true
-    
+
     if [ "$PT_force" != "true" ]; then
         echo "Proceed with package updates? (y/N)"
         read -n 1 response
@@ -38,14 +38,14 @@ update_packages() {
             return 0
         fi
     fi
-    
+
     # Perform upgrade
     DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-    
+
     # Clean up
     apt-get autoremove -y
     apt-get autoclean
-    
+
     # Check if reboot is required
     if [ -f /var/run/reboot-required ]; then
         echo "⚠️  System reboot required for kernel updates"
@@ -56,19 +56,44 @@ update_packages() {
             echo "💡 Run with reboot_if_needed=true to automatically reboot"
         fi
     fi
-    
+
     echo "✅ Package update completed"
 }
 
 # Function to restart K3s services
 restart_services() {
     echo "🔄 Restarting K3s services..."
-    
+
     if is_master_node; then
-        echo "Restarting K3s server..."
-        systemctl restart k3s
+        echo "Stopping K3s server..."
+        systemctl stop k3s
+
+        # Use k3s-killall.sh if available to clean up zombie processes
+        # This prevents "address already in use" errors on port 6444
+        if [ -x /usr/local/bin/k3s-killall.sh ]; then
+            echo "🧹 Running k3s-killall.sh to clean up processes..."
+            /usr/local/bin/k3s-killall.sh 2>/dev/null || true
+        else
+            # Manual cleanup of zombie processes
+            echo "🧹 Cleaning up zombie K3s processes..."
+            pkill -9 -f "k3s server" 2>/dev/null || true
+            pkill -9 -f "k3s-agent" 2>/dev/null || true
+            pkill -9 containerd-shim 2>/dev/null || true
+        fi
+
+        # Wait for ports to be released
+        sleep 5
+
+        # Verify ports are free before starting
+        if ss -tlnp | grep -q ':6444'; then
+            echo "⚠️  Port 6444 still in use, waiting..."
+            sleep 5
+        fi
+
+        echo "Starting K3s server..."
+        systemctl start k3s
         sleep 10
-        
+
         # Wait for API server to be ready
         echo "⏳ Waiting for API server..."
         for i in {1..30}; do
@@ -76,93 +101,103 @@ restart_services() {
                 echo "✅ API server is ready"
                 break
             fi
+            if [ $i -eq 30 ]; then
+                echo "⚠️  API server not ready after 150 seconds"
+            fi
             sleep 5
         done
     else
-        echo "Restarting K3s agent..."
-        systemctl restart k3s-agent
+        echo "Stopping K3s agent..."
+        systemctl stop k3s-agent
+
+        # Clean up any zombie processes
+        pkill -9 -f "k3s agent" 2>/dev/null || true
+        sleep 3
+
+        echo "Starting K3s agent..."
+        systemctl start k3s-agent
         sleep 5
     fi
-    
+
     echo "✅ Services restarted"
 }
 
 # Function to cleanup Docker/containerd images
 cleanup_images() {
     echo "🧹 Cleaning up container images..."
-    
+
     # Show current image usage
     echo "Current image usage:"
     if command -v crictl >/dev/null 2>&1; then
         crictl images
         echo ""
-        
+
         # Remove unused images
         echo "Removing unused images..."
         crictl rmi --prune 2>/dev/null || true
-        
+
         echo "After cleanup:"
         crictl images
     elif command -v docker >/dev/null 2>&1; then
         docker images
         echo ""
-        
+
         # Remove unused images
         echo "Removing unused images..."
         docker image prune -f
-        
+
         echo "After cleanup:"
         docker images
     else
         echo "⚠️  No container runtime found for image cleanup"
     fi
-    
+
     echo "✅ Image cleanup completed"
 }
 
 # Function to perform disk cleanup
 disk_cleanup() {
     echo "💾 Performing disk cleanup..."
-    
+
     echo "Disk usage before cleanup:"
     df -h
-    
+
     # Clean system logs
     echo "Cleaning system logs..."
     journalctl --vacuum-time=7d
-    
+
     # Clean temporary files
     echo "Cleaning temporary files..."
     rm -rf /tmp/* 2>/dev/null || true
     rm -rf /var/tmp/* 2>/dev/null || true
-    
+
     # Clean package cache
     echo "Cleaning package cache..."
     apt-get clean
-    
+
     # Clean K3s logs if they exist
     if [ -d /var/log/pods ]; then
         echo "Cleaning old pod logs..."
         find /var/log/pods -name "*.log" -mtime +7 -delete 2>/dev/null || true
     fi
-    
+
     echo "Disk usage after cleanup:"
     df -h
-    
+
     echo "✅ Disk cleanup completed"
 }
 
 # Function to rotate logs
 log_rotation() {
     echo "📄 Performing log rotation..."
-    
+
     # Force log rotation
     logrotate -f /etc/logrotate.conf 2>/dev/null || true
-    
+
     # Rotate systemd journal
     journalctl --rotate
     journalctl --vacuum-time=7d
-    
+
     # Check if K3s has specific log files to rotate
     if [ -f /var/log/k3s.log ]; then
         echo "Rotating K3s logs..."
@@ -186,20 +221,20 @@ EOL
             logrotate -f /etc/logrotate.d/k3s
         fi
     fi
-    
+
     echo "✅ Log rotation completed"
 }
 
 # Function to perform all maintenance operations
 perform_all_maintenance() {
     echo "🔧 Performing comprehensive maintenance..."
-    
+
     update_packages
     cleanup_images
     disk_cleanup
     log_rotation
     restart_services
-    
+
     echo "✅ All maintenance operations completed"
 }
 

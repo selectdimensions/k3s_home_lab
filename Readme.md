@@ -372,10 +372,23 @@ Once deployed, access your services through these **validated endpoints**:
 - **PostgreSQL**: `kubectl port-forward svc/postgresql 5432:5432 -n data-engineering` (dataeng/postgres123!) ✅
 
 ### 🎯 Direct Service Access (via MetalLB LoadBalancer)
-When MetalLB is configured, services are available directly at:
-- **NiFi**: http://192.168.0.200:8080 (when LoadBalancer enabled)
-- **Grafana**: http://192.168.0.201:3000 (when LoadBalancer enabled)
-- **Trino**: http://192.168.0.202:8080 (when LoadBalancer enabled)
+
+All services are accessible simultaneously via their dedicated static IPs:
+
+| Service | IP Address | Port | Access URL |
+|---------|------------|------|------------|
+| **NiFi** | 192.168.0.200 | 8080 | http://192.168.0.200:8080 |
+| **Grafana** | 192.168.0.201 | 3000 | http://192.168.0.201:3000 |
+| **Trino** | 192.168.0.202 | 8080 | http://192.168.0.202:8080 |
+| **MinIO Console** | 192.168.0.203 | 9001 | http://192.168.0.203:9001 |
+| **MinIO API** | 192.168.0.203 | 9000 | http://192.168.0.203:9000 |
+| **PostgreSQL** | 192.168.0.204 | 5432 | `psql -h 192.168.0.204 -U dataeng` |
+| **Prometheus** | 192.168.0.205 | 9090 | http://192.168.0.205:9090 |
+| **AlertManager** | 192.168.0.206 | 9093 | http://192.168.0.206:9093 |
+
+> **Note:** These IPs are assigned by MetalLB from the pool `192.168.0.200-250`.
+> Each service has a static IP annotation (`metallb.universe.tf/loadBalancerIPs`) ensuring consistent access.
+> Cluster node IPs (192.168.0.120-123) are preserved and not affected.
 
 ### 📋 Quick Access Commands
 ```powershell

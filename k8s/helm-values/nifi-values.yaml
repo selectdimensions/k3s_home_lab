@@ -34,6 +34,8 @@ service:
   type: LoadBalancer
   port: 8080
   httpsPort: 8443
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.200"
 
 # Ingress configuration
 ingress:

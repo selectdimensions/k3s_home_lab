@@ -5,7 +5,7 @@ set -e
 
 # Set default values
 PT_stack_components="${PT_stack_components:-all}"
-PT_namespace="${PT_namespace:-monitoring}"  
+PT_namespace="${PT_namespace:-monitoring}"
 PT_persistent_storage="${PT_persistent_storage:-true}"
 PT_retention_days="${PT_retention_days:-15}"
 
@@ -25,7 +25,7 @@ $KUBECTL_CMD create namespace $PT_namespace --dry-run=client -o yaml | $KUBECTL_
 # Function to deploy Prometheus
 deploy_prometheus() {
     echo "📊 Deploying Prometheus..."
-    
+
     # Create Prometheus ConfigMap
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -38,21 +38,21 @@ data:
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
-    
+
     rule_files:
       - "/etc/prometheus/rules/*.yml"
-    
+
     alerting:
       alertmanagers:
         - static_configs:
             - targets:
               - alertmanager:9093
-    
+
     scrape_configs:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
-      
+
       - job_name: 'kubernetes-nodes'
         kubernetes_sd_configs:
           - role: node
@@ -61,7 +61,7 @@ data:
             regex: '(.*):10250'
             target_label: __address__
             replacement: '\${1}:9100'
-      
+
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
           - role: pod
@@ -73,12 +73,12 @@ data:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
-      
+
       - job_name: 'kube-state-metrics'
         static_configs:
           - targets: ['kube-state-metrics:8080']
 EOF
-    
+
     # Create Prometheus Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -138,14 +138,16 @@ spec:
       storage: 10Gi
 EOF
     fi
-    
-    # Create Prometheus Service
+
+    # Create Prometheus Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.205"
 spec:
   selector:
     app: prometheus
@@ -153,7 +155,7 @@ spec:
     - protocol: TCP
       port: 9090
       targetPort: 9090
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ Prometheus deployed"
@@ -162,7 +164,7 @@ EOF
 # Function to deploy Grafana
 deploy_grafana() {
     echo "📈 Deploying Grafana..."
-    
+
     # Create Grafana ConfigMap for datasources
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -180,7 +182,7 @@ data:
       access: proxy
       isDefault: true
 EOF
-    
+
     # Create Grafana Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -238,14 +240,16 @@ spec:
       storage: 5Gi
 EOF
     fi
-    
-    # Create Grafana Service
+
+    # Create Grafana Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: grafana
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.201"
 spec:
   selector:
     app: grafana
@@ -253,7 +257,7 @@ spec:
     - protocol: TCP
       port: 3000
       targetPort: 3000
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ Grafana deployed (admin/admin123)"
@@ -262,7 +266,7 @@ EOF
 # Function to deploy AlertManager
 deploy_alertmanager() {
     echo "🚨 Deploying AlertManager..."
-    
+
     # Create AlertManager ConfigMap
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
@@ -275,20 +279,20 @@ data:
     global:
       smtp_smarthost: 'localhost:587'
       smtp_from: 'alertmanager@k3s-cluster.local'
-    
+
     route:
       group_by: ['alertname']
       group_wait: 10s
       group_interval: 10s
       repeat_interval: 1h
       receiver: 'web.hook'
-    
+
     receivers:
     - name: 'web.hook'
       webhook_configs:
       - url: 'http://localhost:5001/alerts'
 EOF
-    
+
     # Create AlertManager Deployment
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
@@ -326,14 +330,16 @@ spec:
       - name: alertmanager-storage
         emptyDir: {}
 EOF
-    
-    # Create AlertManager Service
+
+    # Create AlertManager Service with MetalLB LoadBalancer
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: v1
 kind: Service
 metadata:
   name: alertmanager
   namespace: $PT_namespace
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.206"
 spec:
   selector:
     app: alertmanager
@@ -341,7 +347,7 @@ spec:
     - protocol: TCP
       port: 9093
       targetPort: 9093
-  type: ClusterIP
+  type: LoadBalancer
 EOF
 
     echo "✅ AlertManager deployed"
@@ -350,7 +356,7 @@ EOF
 # Function to deploy Node Exporter
 deploy_node_exporter() {
     echo "📊 Deploying Node Exporter..."
-    
+
     cat <<EOF | $KUBECTL_CMD apply -f -
 apiVersion: apps/v1
 kind: DaemonSet
@@ -431,7 +437,12 @@ echo "📊 Services:"
 $KUBECTL_CMD get services -n $PT_namespace
 
 echo ""
-echo "🌐 Access URLs (use kubectl port-forward):"
+echo "🌐 Direct Access URLs (via MetalLB LoadBalancer):"
+echo "  Grafana:      http://192.168.0.201:3000  (admin/admin123)"
+echo "  Prometheus:   http://192.168.0.205:9090"
+echo "  AlertManager: http://192.168.0.206:9093"
+echo ""
+echo "🔄 Port-forward alternative (if LoadBalancer not available):"
 echo "  Prometheus: kubectl port-forward svc/prometheus 9090:9090 -n $PT_namespace"
 echo "  Grafana: kubectl port-forward svc/grafana 3000:3000 -n $PT_namespace"
 echo "  AlertManager: kubectl port-forward svc/alertmanager 9093:9093 -n $PT_namespace"

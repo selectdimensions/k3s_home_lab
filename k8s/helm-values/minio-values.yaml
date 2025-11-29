@@ -37,6 +37,8 @@ service:
   ports:
     api: 9000
     console: 9001
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.203"
 
 # Ingress configuration
 ingress:

@@ -62,28 +62,28 @@ primary:
     listen_addresses = '*'
     port = 5432
     max_connections = 100
-    
+
     # Memory settings (optimized for 2GB limit)
     shared_buffers = 256MB
     effective_cache_size = 1GB
     work_mem = 4MB
     maintenance_work_mem = 64MB
-    
+
     # WAL settings
     wal_level = replica
     max_wal_size = 1GB
     min_wal_size = 80MB
-    
+
     # Logging
     log_destination = 'stderr'
     logging_collector = on
     log_statement = 'none'
     log_min_error_statement = error
     log_min_messages = warning
-    
+
     # Autovacuum
     autovacuum = on
-    
+
     # ARM64 specific optimizations
     random_page_cost = 1.1
     seq_page_cost = 1.0
@@ -106,9 +106,11 @@ primary:
 
 # Service configuration
 service:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     postgresql: 5432
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.0.204"
 
 # Metrics and monitoring
 metrics:
@@ -116,7 +118,7 @@ metrics:
   serviceMonitor:
     enabled: true
     namespace: monitoring
-  
+
   resources:
     limits:
       cpu: 100m
