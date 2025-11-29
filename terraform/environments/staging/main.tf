@@ -163,9 +163,34 @@ module "backup" {
   depends_on = [module.data_platform]
 }
 
-# Generate kubeconfig for staging
-resource "local_file" "kubeconfig" {
-  content         = module.k3s_cluster.kubeconfig
+# Note: Kubeconfig is generated during actual K3s deployment, not Terraform
+# This resource creates a placeholder that will be updated by Puppet/Bolt deployment
+resource "local_file" "kubeconfig_placeholder" {
+  content = yamlencode({
+    apiVersion = "v1"
+    kind       = "Config"
+    clusters = [{
+      name = "pi-k3s-${local.environment}"
+      cluster = {
+        server                   = "https://192.168.0.120:6443"
+        "insecure-skip-tls-verify" = true
+      }
+    }]
+    contexts = [{
+      name = "pi-k3s-${local.environment}"
+      context = {
+        cluster = "pi-k3s-${local.environment}"
+        user    = "admin"
+      }
+    }]
+    "current-context" = "pi-k3s-${local.environment}"
+    users = [{
+      name = "admin"
+      user = {
+        token = "placeholder-update-after-deployment"
+      }
+    }]
+  })
   filename        = "${path.root}/.kube/config-staging"
   file_permission = "0600"
 }

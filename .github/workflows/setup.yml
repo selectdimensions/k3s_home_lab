@@ -126,15 +126,11 @@ jobs:
           cd ${{ needs.preflight.outputs.terraform_path }}
           terraform init -backend=false -input=false
 
-      - name: Terraform Validate
-        run: |
-          cd ${{ needs.preflight.outputs.terraform_path }}
-          terraform validate
-
       - name: Create validation tfvars
         run: |
           cd ${{ needs.preflight.outputs.terraform_path }}
           # Create minimal tfvars for validation (not real secrets)
+          # Note: terraform validate doesn't use tfvars, but plan does
           cat > terraform.tfvars << 'EOF'
           grafana_admin_password = "validation-only"
           postgres_password = "validation-only"
@@ -142,7 +138,13 @@ jobs:
           nifi_admin_password = "validation-only"
           trino_admin_password = "validation-only"
           vault_token = "validation-only"
+          backup_storage_location = "/tmp/backups"
           EOF
+
+      - name: Terraform Validate
+        run: |
+          cd ${{ needs.preflight.outputs.terraform_path }}
+          terraform validate
 
       - name: Terraform Plan (Validation)
         run: |
