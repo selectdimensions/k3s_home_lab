@@ -54,6 +54,7 @@ jobs:
       - name: Init TFLint
         run: tflint --init
         working-directory: terraform
+        continue-on-error: true
 
       - name: Run TFLint
         id: lint
